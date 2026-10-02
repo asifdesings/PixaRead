@@ -4,10 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#EDE7D8">
-<link rel="manifest" href="./manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="PixaRead">
 <title>PixaRead</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 14'%3E%3Cpath d='M0 0h8v1h-8zM0 1h1v1h-1zM7 1h2v1h-2zM0 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM0 3h1v1h-1zM7 3h4v1h-4zM0 4h1v1h-1zM10 4h1v1h-1zM0 5h1v1h-1zM2 5h7v1h-7zM10 5h1v1h-1zM0 6h1v1h-1zM10 6h1v1h-1zM0 7h1v1h-1zM2 7h7v1h-7zM10 7h1v1h-1zM0 8h1v1h-1zM10 8h1v1h-1zM0 9h1v1h-1zM2 9h5v1h-5zM10 9h1v1h-1zM0 10h1v1h-1zM10 10h1v1h-1zM0 11h1v1h-1zM2 11h7v1h-7zM10 11h1v1h-1zM0 12h1v1h-1zM10 12h1v1h-1zM0 13h11v1h-11z'/%3E%3C/svg%3E">
@@ -21,7 +19,7 @@
  Targets  : 44-48px minimum.
 */
 :root{
-  --bg:#EDE7D8;--fg:#23211D;--mid:#7A7568;--faint:#CFC8B6;--ink:#23211D;
+  --bg:#EDE7D8;--fg:#23211D;--mid:#7A7568;--faint:#CFC8B6;--ink:#23211D;--hlbg:#D3CCBA;
   --f-label:'Silkscreen','Press Start 2P',ui-monospace,Menlo,Consolas,monospace;
   --f-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
   --f-serif:'Literata',Georgia,'Times New Roman',serif;
@@ -46,7 +44,7 @@ button{font:inherit;color:inherit;border-radius:0;cursor:pointer}
 ::selection{background:var(--fg);color:var(--bg)}
 
 /* stepped pixel corners */
-html.px .btn,html.px .ib,html.px .seg,html.px .card,html.px .dlg,html.px .toast,html.px .cover,html.px .recent,html.px .step{
+html.px .btn,html.px .ib,html.px .seg,html.px .card,html.px .dlg,html.px .toast,html.px .cover,html.px .recent,html.px .step,html.px .sb button,html.px .pill{
   clip-path:polygon(0 3px,3px 3px,3px 0,calc(100% - 3px) 0,calc(100% - 3px) 3px,100% 3px,100% calc(100% - 3px),calc(100% - 3px) calc(100% - 3px),calc(100% - 3px) 100%,3px 100%,3px calc(100% - 3px),0 calc(100% - 3px));
 }
 
@@ -114,8 +112,8 @@ html.px .bar{background:repeating-conic-gradient(var(--mid) 0 25%,var(--bg) 0 50
 .dl dt{font-family:var(--f-label);font-size:11px;letter-spacing:.08em;color:var(--mid);text-transform:uppercase;align-self:center}
 .dl dd{margin:0;font-family:var(--f-mono);font-size:13px;text-align:right}
 .stack{display:flex;flex-direction:column;gap:var(--s3)}
-.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s2)}
-.trio .btn{padding:0 var(--s1);font-size:10px}
+.trio{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--s2)}
+.trio .btn{padding:0 var(--s2);font-size:11px}
 
 /* list screens */
 .li{display:flex;align-items:stretch;border-bottom:1px dotted var(--mid)}
@@ -213,6 +211,29 @@ a{color:inherit}
 #splash .pct{font-family:var(--f-label);font-size:11px;letter-spacing:.14em;color:var(--mid);min-height:14px}
 #splash .ver{position:absolute;bottom:calc(16px + env(safe-area-inset-bottom,0px));font-family:var(--f-mono);font-size:11px;color:var(--mid)}
 html.px #splash .load{clip-path:polygon(0 3px,3px 3px,3px 0,calc(100% - 3px) 0,calc(100% - 3px) 3px,100% 3px,100% calc(100% - 3px),calc(100% - 3px) calc(100% - 3px),calc(100% - 3px) 100%,3px 100%,3px calc(100% - 3px),0 calc(100% - 3px))}
+
+.flow .h-hl{background:var(--hlbg)}
+.flow .h-ul{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:.2em}
+.flow .h-mk{background:var(--fg);color:var(--bg)}
+.pv-hl{background:var(--hlbg)}
+.pv-ul{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:.2em}
+.pv-mk{background:var(--fg);color:var(--bg)}
+.selbar{position:absolute;left:0;right:0;bottom:0;z-index:7;background:var(--bg);border-top:var(--bw) solid var(--fg);padding:8px var(--pad);display:flex;flex-direction:column;gap:6px;-webkit-user-select:none;user-select:none}
+.selbar.at-top{top:0;bottom:auto;border-top:0;border-bottom:var(--bw) solid var(--fg)}
+.sb{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.sb button{min-height:48px;border:var(--bw) solid var(--fg);background:var(--bg);color:var(--fg);font-family:var(--f-label);font-size:10px;letter-spacing:.04em;text-transform:uppercase;padding:2px;display:flex;align-items:center;justify-content:center;gap:4px}
+.sb button:active{background:var(--fg);color:var(--bg)}
+.sb .pv-hl,.sb .pv-ul,.sb .pv-mk{padding:3px 4px}
+.pill{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:55;background:var(--fg);color:var(--bg);border:var(--bw) solid var(--fg);font-family:var(--f-label);font-size:11px;letter-spacing:.08em;text-transform:uppercase;min-height:44px;padding:0 16px;display:flex;align-items:center;gap:10px}
+.pill .sq{width:10px;height:10px;background:currentColor;display:inline-block}
+.btnrow .ib{height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.bl{font-family:var(--f-label);font-size:8px;letter-spacing:.04em;line-height:1;text-transform:uppercase}
+.hdr .btn{min-height:44px;padding:0 10px;font-size:10px}
+select.sinput{font-size:14px;padding:0 var(--s2)}
+.qnav{margin-bottom:var(--s2)}
+.pill{padding:0;gap:0}
+.pill button{background:transparent;color:var(--bg);border:0;font:inherit;letter-spacing:inherit;text-transform:inherit;min-height:44px;padding:0 16px;display:flex;align-items:center;gap:8px}
+.pill button+button{border-left:var(--bw) solid var(--bg)}
 </style>
 </head>
 <body>
@@ -222,7 +243,7 @@ html.px #splash .load{clip-path:polygon(0 3px,3px 3px,3px 0,calc(100% - 3px) 0,c
   <div class="tag">A QUIET PIXEL READER</div>
   <div class="load" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
   <div class="pct" id="splash-pct">0%</div>
-  <div class="ver">v1.0</div>
+  <div class="ver">v1.1</div>
 </div>
 
 <section class="screen" id="s-library" aria-label="Library" hidden></section>
@@ -245,15 +266,18 @@ html.px #splash .load{clip-path:polygon(0 3px,3px 3px,3px 0,calc(100% - 3px) 0,c
     <div class="scrubrow"><span class="lbl" id="sc-l">CH 1</span><input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Reading position"><span class="lbl" id="sc-r">0%</span></div>
     <div class="btnrow" id="btnrow"></div>
   </div>
+  <div class="selbar" id="selbar" hidden></div>
   <div class="sr" id="live" aria-live="polite"></div>
 </section>
 
 <section class="screen" id="s-toc" aria-label="Table of contents" hidden></section>
 <section class="screen" id="s-bookmarks" aria-label="Bookmarks" hidden></section>
+<section class="screen" id="s-notes" aria-label="Highlights" hidden></section>
 <section class="screen" id="s-search" aria-label="Search" hidden></section>
 <section class="screen" id="s-settings" aria-label="Settings" hidden></section>
 
 <input type="file" id="file" multiple hidden>
+<div class="pill" id="speakpill" role="group" aria-label="Read aloud controls" hidden><button data-act="tts-pause" id="pill-pause">Pause</button><button data-act="tts-stop"><i class="sq"></i> Stop</button></div>
 <div id="modal" hidden></div>
 <div id="busy" hidden></div>
 <div class="toast" id="toast" role="status" hidden></div>
@@ -288,6 +312,7 @@ const ICONS = {
   trash:['...###...','#########','.#.....#.','.#.#.#.#.','.#.#.#.#.','.#.#.#.#.','.#.#.#.#.','.#.....#.','.#######.'],
   edit:['......##.','.....####','....####.','...####..','..####...','.####....','#####....','##.......'],
   logo:['########...', '#......##..', '#......#.#.', '#......####', '#.........#', '#.#######.#', '#.........#', '#.#######.#', '#.........#', '#.#####...#', '#.........#', '#.#######.#', '#.........#', '###########'],
+  speaker:['...#.....','..##...#.','####.#..#','####..#.#','####..#.#','####.#..#','..##...#.','...#.....'],
   chev:['#....','##...','###..','####.','#####','####.','###..','##...','#....']
 };
 function ic(name, cell = 3, flip = false){
@@ -307,7 +332,7 @@ function coverSvg(seed){
 const cover = (b, size) => `<span class="cover ${size}">${coverSvg(b.title + b.id)}</span>`;
 
 /* ================= settings ================= */
-const DEF = {theme:'paper',font:'lit',size:20,line:1.55,margin:2,para:0,align:'left',layout:'single',pixel:true,contrast:100,tone:0,gray:false,footer:true,turn:'both',hand:'right',orient:'auto',wake:true,refresh:'subtle',dim:100,sort:'recent',weight:'normal',eta:true,auto:0,rate:1};
+const DEF = {theme:'paper',font:'lit',size:20,line:1.55,margin:2,para:0,align:'left',layout:'single',pixel:true,contrast:100,tone:0,gray:false,footer:true,turn:'both',hand:'right',orient:'auto',wake:true,refresh:'subtle',dim:100,sort:'recent',weight:'normal',eta:true,auto:0,rate:1,goal:0,voice:'',vstyle:'female',pitch:1};
 let S = {...DEF};
 try {
   const raw = localStorage.getItem('inkleaf.s');
@@ -343,7 +368,7 @@ function applyTheme(){
   const r = document.documentElement, st = r.style;
   st.setProperty('--bg', hex(bg)); st.setProperty('--fg', hex(fg));
   st.setProperty('--mid', hex(mixc(bg, fg, .55))); st.setProperty('--faint', hex(mixc(bg, fg, .18)));
-  st.setProperty('--ink', hex(mixc(bg, fg, S.contrast / 100)));
+  st.setProperty('--ink', hex(mixc(bg, fg, S.contrast / 100))); st.setProperty('--hlbg', hex(mixc(bg, fg, .26)));
   r.dataset.theme = (S.theme === 'dark') ? 'dark' : 'light';
   r.classList.toggle('px', !!S.pixel);
   const m = $('meta[name=theme-color]'); if (m) m.content = hex(bg);
@@ -697,11 +722,12 @@ function guideBook(){
     ['Welcome', `<p>PixaRead turns your phone into a quiet reading device. Everything here is black, white and gray, and nothing moves unless you ask it to.</p><p>Your books are stored on this phone only. Nothing is uploaded, and no account is needed.</p><p>Tap the middle of the page to show or hide the controls. Tap the left or right edge, or swipe, to turn pages. Tap the top right corner to bookmark the page.</p>`],
     ['Page turns and refresh', `<p>Settings has a Page Refresh option. Instant changes the page and nothing else. Subtle adds a brief pale dip. E-Ink Flash blanks the page to black and white on chapter changes and every fifth page, like the full refresh on a real e-ink panel.</p><p>Flash is switched off if your device asks for reduced motion.</p><h3>Pixel E-Ink</h3><p>This mode changes only the interface: square pixel corners, dithered progress bars, bitmap icons. Reading text is never pixelated.</p>`],
     ['About the display', `<p>This app cannot turn an AMOLED screen into real e-ink. E-ink is reflective and needs no backlight. An AMOLED panel makes its own light.</p><p>What the app does: paper-toned palettes without pure black or pure white, adjustable contrast, a grayscale option, a software dimmer, no animation, and crisp text.</p><p>What it cannot do: change system brightness, switch on the system grayscale filter, or give the eye comfort of a reflective screen. In Android settings, look under Accessibility for color correction (grayscale) and extra dim. Menu names vary by phone.</p>`],
+    ['Highlights and voice', `<p>Press and hold a word, then drag the handles. A bar appears with Highlight, Underline and Mark, plus Speak, Copy, Note and Look up.</p><p>Tap a highlight in the middle of the page to edit it, add a note, or hear it read. Everything you mark is listed under List, then Highlights, where you can copy it all out.</p><p>Speak uses the voices already on your phone, so quality depends on the voice you have installed. Choose one under Tools.</p>`],
     ['Tools and fonts', `<p>The Aa panel has eight fonts, including Pixel and Terminal for a bitmap look. Bold text weight can help on a dim screen.</p><p>The sun button opens the dimmer, read aloud and auto page turn. Read aloud uses your phone's own voices and keeps going page by page. Auto page turn moves on after the time you pick.</p><p>The library shows how long you have read today. Two-page layout switches on by itself on wide screens when set to Auto.</p>`],
     ['Formats', `<ul><li>TXT, Markdown and HTML open directly.</li><li>EPUB opens with chapters and a table of contents when the book has one. Images are left out.</li><li>PDF text is extracted and reflowed. Scanned PDFs without text cannot be read.</li></ul><p>EPUB and PDF import download a small parser the first time you use them, so you need a connection once.</p>`],
     ['Sample pages', `<p>The lamp on the desk had burned down to a small steady flame, and the room had gone quiet in the way rooms do when everyone in them has stopped pretending to be busy. Outside, the street was still wet from the afternoon rain, and the windows opposite were lit in squares of yellow.</p><p>She turned the page without looking up. There is a particular pleasure in a long book at the right hour: the sentences settle, the margins fall away, and for a while the only thing that moves is the slow line of progress at the bottom of the screen.</p><p>Somewhere a clock struck eleven. She counted the strokes out of habit, then went back to the paragraph she had been reading, and found that she had not lost her place at all.</p><p>Try the Aa panel now. Change the font, the size, the line spacing and the margins until this paragraph looks the way you want a book to look.</p>`]
   ];
-  return {title: 'PixaRead Reading Guide', author: 'PixaRead', chapters: c.map(([title, html]) => ({title, html}))};
+  return {title: 'PixaRead Reading Guide', author: 'PixaRead', gv: 2, chapters: c.map(([title, html]) => ({title, html}))};
 }
 
 /* ================= library data ================= */
@@ -709,7 +735,7 @@ async function addBook(p, {id, format}){
   const chapters = p.chapters.map(c => ({title: c.title, html: c.html, len: textLen(c.html)})).filter(c => c.len > 0);
   if (!chapters.length) throw new Error('No readable text found in this file.');
   const total = chapters.reduce((a, c) => a + c.len, 0);
-  const meta = {id, title: (p.title || 'Untitled').slice(0, 200), author: (p.author || '').slice(0, 200), format, lang: p.lang || 'en', added: Date.now(), lastOpened: 0, chapterCount: chapters.length, total, pos: {ch: 0, off: 0}, progress: 0, bookmarks: [], note: p.note || ''};
+  const meta = {id, title: (p.title || 'Untitled').slice(0, 200), author: (p.author || '').slice(0, 200), format, lang: p.lang || 'en', added: Date.now(), lastOpened: 0, chapterCount: chapters.length, total, pos: {ch: 0, off: 0}, progress: 0, bookmarks: [], annots: [], gv: p.gv || 0, note: p.note || ''};
   await DB.put('content', {id, chapters}); await DB.put('books', meta); books.push(meta); return meta;
 }
 async function importFile(file){
@@ -753,13 +779,13 @@ async function removeBook(id){
 }
 
 /* ================= navigation ================= */
-const SCREENS = ['library', 'details', 'reader', 'toc', 'bookmarks', 'search', 'settings'];
+const SCREENS = ['library', 'details', 'reader', 'toc', 'bookmarks', 'notes', 'search', 'settings'];
 const nav = {stack: ['library']}; let current = 'library', hist = true, detailId = null, bmScope = null;
 function show(name){
   if (current === 'reader' && name !== 'reader'){ flushSave(); speakStop(); clearTimeout(autoT); }
   current = name;
   SCREENS.forEach(s => { $('#s-' + s).hidden = s !== name; });
-  ({library: rLibrary, details: rDetails, toc: rToc, bookmarks: rBookmarks, search: rSearch, settings: rSettings, reader: enterReader})[name]();
+  ({library: rLibrary, details: rDetails, toc: rToc, bookmarks: rBookmarks, notes: rNotes, search: rSearch, settings: rSettings, reader: enterReader})[name]();
   wake();
 }
 function go(name){ nav.stack.push(name); try { history.pushState({d: nav.stack.length}, ''); } catch(e){ hist = false; } show(name); }
@@ -793,7 +819,8 @@ function rLibrary(){
       for (const b of recents.slice(1)) h += bookRow(b, 'recent');
     }
     h += `<div class="sec">[ My books ]</div><div class="seg" style="--c:3;margin-bottom:8px">${[['recent', 'Recent'], ['title', 'Title'], ['author', 'Author']].map(([v, l]) => `<button data-act="set" data-k="sort" data-v='"${v}"' aria-pressed="${S.sort === v}">${l}</button>`).join('')}</div>`;
-    for (const b of sortedBooks()) h += bookRow(b, 'details');
+    if (books.length >= 3) h += `<input class="sinput" id="libq" type="search" placeholder="Search your library" value="${esc(libq)}" aria-label="Search library" autocomplete="off" style="margin-bottom:8px">`;
+    h += `<div id="liblist">${libRows()}</div>`;
   }
   h += `</div><div class="foot"><button class="btn solid wide" data-act="import">${ic('plus')} Import book</button><div class="hint">TXT · EPUB · PDF · HTML · MD — stays on this device</div></div>`;
   el.innerHTML = h; const sc = $('.scroll', el); if (sc) sc.scrollTop = top;
@@ -815,7 +842,7 @@ function rDetails(){
   <div class="barrow" style="margin:8px 0 20px"><span class="bar"><i style="width:${Math.round(b.progress * 100)}%"></i></span><span class="pct">${pctStr(b.progress)}</span></div>
   ${b.note ? `<p class="note">${esc(b.note)}</p>` : ''}
   <div class="stack"><button class="btn solid wide" data-act="read" data-id="${esc(b.id)}">${started ? 'Continue · ' + esc(chapLabel(b)) : 'Start reading'}</button>
-  <div class="trio"><button class="btn" data-act="d-toc">Contents</button><button class="btn" data-act="d-search">Search</button><button class="btn" data-act="d-bm">Bookmarks ${b.bookmarks.length}</button></div>
+  <div class="trio"><button class="btn" data-act="d-toc">Contents</button><button class="btn" data-act="d-search">Search</button><button class="btn" data-act="d-bm">Bookmarks ${b.bookmarks.length}</button><button class="btn" data-act="d-notes">Highlights ${(b.annots || []).length}</button></div>
   ${started ? `<button class="btn wide" data-act="read0" data-id="${esc(b.id)}">Start over</button>` : ''}
   <button class="btn wide danger" data-act="del" data-id="${esc(b.id)}">${ic('trash', 2)} Remove from library</button></div></div>`;
 }
@@ -833,7 +860,7 @@ async function ensureBook(id){
   if (!meta || !c) throw new Error('Book data is missing. Remove it and import again.');
   R.book = {meta, chapters: c.chapters}; R.chapStart = []; let s = 0;
   for (const ch of c.chapters){ R.chapStart.push(s); s += ch.len; }
-  R.total = s || 1; R.ch = clamp(meta.pos.ch, 0, c.chapters.length - 1); R.off = meta.pos.off || 0; R.texts = null; R.page = 0;
+  R.total = s || 1; R.ch = clamp(meta.pos.ch, 0, c.chapters.length - 1); R.off = meta.pos.off || 0; R.texts = null; R.page = 0; meta.annots = meta.annots || []; sq = ''; sResults = [];
 }
 async function startReading(id, fromStart){
   try { await ensureBook(id); } catch(e){ toast(e.message); return; }
@@ -913,7 +940,7 @@ function offsetForPage(p){
 function pageForOffset(o){ const c = pageOf(clamp(o, 0, Math.max(0, R.len - 1))); return isFinite(c) ? Math.min(c, R.pages - 1) : R.pages - 1; }
 function place(){ flow.style.transform = `translate3d(${-R.page * R.stride}px,0,0)`; }
 function loadChapter(i, opt = {}){
-  const c = R.book.chapters[i]; R.ch = i; flow.innerHTML = c.html; collectNodes(); measure();
+  const c = R.book.chapters[i]; R.ch = i; flow.innerHTML = c.html; wrapAnnots(); collectNodes(); measure();
   if (opt.last){ R.page = R.pages - 1; R.off = offsetForPage(R.page); }
   else { R.off = clamp(opt.off || 0, 0, R.len); R.page = R.off ? pageForOffset(R.off) : 0; }
   place(); updateUI();
@@ -923,7 +950,7 @@ function enterReader(){
   if (!R.book){ nav.stack = ['library']; show('library'); return; }
   setCtl(false); closeSheet();
   try { if (document.fonts && document.fonts.load) document.fonts.load('16px ' + FONTS[S.font].f.split(',')[0]).then(relayoutSoon, () => {}); } catch(e){}
-  requestAnimationFrame(() => { if (current !== 'reader') return; if (!applyLayout()) return; const hl = R.pendingHL; R.pendingHL = 0; loadChapter(R.ch, {off: R.off, hl}); });
+  requestAnimationFrame(() => { if (current !== 'reader') return; if (!applyLayout()) return; const hl = R.pendingHL; R.pendingHL = 0; loadChapter(R.ch, {off: R.off, hl}); showTips(); });
 }
 function relayout(){
   if (current !== 'reader' || !R.book || !flow.firstChild) return;
@@ -977,13 +1004,13 @@ function withFx(chapterChange, fn){
   }
 }
 function next(){
-  clearHL();
+  clearHL(); if (selInfo) clearSel();
   if (R.page < R.pages - 1) withFx(false, () => { R.page++; R.off = offsetForPage(R.page); place(); updateUI(); });
   else if (R.ch < R.book.chapters.length - 1) withFx(true, () => loadChapter(R.ch + 1));
   else toast('End of book');
 }
 function prev(){
-  clearHL();
+  clearHL(); if (selInfo) clearSel();
   if (R.page > 0) withFx(false, () => { R.page--; R.off = R.page ? offsetForPage(R.page) : 0; place(); updateUI(); });
   else if (R.ch > 0) withFx(true, () => loadChapter(R.ch - 1, {last: true}));
   else toast('Start of book');
@@ -1021,13 +1048,13 @@ function setCtl(v){
 }
 function renderBtnRow(){
   const b = $('#btnrow');
-  b.innerHTML = `<button class="ib" data-act="prev" aria-label="Previous page">${ic('back', 3)}</button>
-  <button class="ib" data-act="toc" aria-label="Contents">${ic('toc')}</button>
-  <button class="ib" data-act="search" aria-label="Search">${ic('search')}</button>
-  <button class="ib ${sheetKind === 'aa' ? 'on' : ''}" data-act="sheet" data-k="aa" aria-label="Text settings" style="font-family:var(--f-label)">Aa</button>
-  <button class="ib ${sheetKind === 'dim' ? 'on' : ''}" data-act="sheet" data-k="dim" aria-label="Dimmer and tools">${ic('sun')}</button>
-  <button class="ib" data-act="theme" aria-label="Change theme">${ic('theme')}</button>
-  <button class="ib" data-act="next" aria-label="Next page">${ic('back', 3, true)}</button>`;
+  b.innerHTML = `<button class="ib" data-act="prev" aria-label="Previous page">${ic('back', 3)}<span class="bl">Prev</span></button>
+  <button class="ib" data-act="toc" aria-label="Contents, bookmarks and highlights">${ic('toc')}<span class="bl">List</span></button>
+  <button class="ib" data-act="search" aria-label="Search in book">${ic('search')}<span class="bl">Find</span></button>
+  <button class="ib ${sheetKind === 'aa' ? 'on' : ''}" data-act="sheet" data-k="aa" aria-label="Text settings"><span style="font-family:var(--f-label);font-size:14px;line-height:1">Aa</span><span class="bl">Text</span></button>
+  <button class="ib ${sheetKind === 'dim' ? 'on' : ''}" data-act="sheet" data-k="dim" aria-label="Tools: dimmer, read aloud, auto page turn">${ic('sun')}<span class="bl">Tools</span></button>
+  <button class="ib" data-act="theme" aria-label="Change theme">${ic('theme')}<span class="bl">Theme</span></button>
+  <button class="ib" data-act="next" aria-label="Next page">${ic('back', 3, true)}<span class="bl">Next</span></button>`;
 }
 function closeSheet(){ sheetKind = null; const s = $('#sheet'); if (s) s.hidden = true; }
 function openSheet(k){
@@ -1037,7 +1064,7 @@ function openSheet(k){
 function renderSheet(){
   const s = $('#sheet'); if (!sheetKind){ s.hidden = true; return; }
   const top = s.scrollTop; s.hidden = false;
-  if (sheetKind === 'dim') s.innerHTML = `<div class="row"><div class="lbl"><span>Software dimmer</span><span>${S.dim}%</span></div><div class="step">${stepBtn('dim', -1)}<output>${S.dim}%</output>${stepBtn('dim', 1)}</div><p class="note" style="margin:0">This only darkens the app. Your phone's brightness is set in system settings.</p></div><div class="row"><div class="lbl"><span>Read aloud</span></div><button class="btn wide" data-act="tts">${tts.on ? 'Stop reading' : 'Read this page aloud'}</button></div>${ctlStep('rate')}${ctlSeg('auto')}`;
+  if (sheetKind === 'dim') s.innerHTML = `<div class="row"><div class="lbl"><span>Software dimmer</span><span>${S.dim}%</span></div><div class="step">${stepBtn('dim', -1)}<output>${S.dim}%</output>${stepBtn('dim', 1)}</div><p class="note" style="margin:0">This only darkens the app. Your phone's brightness is set in system settings.</p></div><div class="row"><div class="lbl"><span>Read aloud</span></div><button class="btn wide" data-act="tts">${tts.on ? 'Stop reading' : 'Read this page aloud'}</button></div>${ctlSeg('vstyle')}${ctlVoice()}${ctlStep('rate')}${ctlStep('pitch')}<div class="row"><button class="btn wide" data-act="voice-test">Preview voice</button></div>${ctlSeg('auto')}`;
   else s.innerHTML = `${ctlFont()}${ctlStep('size')}${ctlStep('line')}${ctlStep('margin')}${ctlSeg('para')}${ctlSeg('align')}${ctlSeg('layout')}${ctlSeg('weight')}${ctlSeg('theme')}<div class="row" style="border:0"><button class="btn wide" data-act="settings">All settings</button></div>`;
   s.scrollTop = top;
 }
@@ -1057,6 +1084,8 @@ rstage.addEventListener('pointerup', e => {
   const w = rstage.clientWidth;
   if (e.clientX > w - 64 && e.clientY < 64 + 0){ toggleBookmark(); return; }
   const z = e.clientX / w;
+  const hlEl = e.target && e.target.closest ? e.target.closest('.hl') : null;
+  if (hlEl && z > .3 && z < .7){ openAnnot(hlEl.dataset.a); return; }
   if (z > .3 && z < .7){ setCtl(true); return; }
   if (S.turn === 'swipe') return;
   const right = z >= .7; const fwd = S.hand === 'right' ? right : !right;
@@ -1078,7 +1107,8 @@ scrub.addEventListener('change', () => {
 
 /* ================= TOC ================= */
 function tabs(active){
-  return `<div class="tabs"><div class="seg" style="--c:2"><button data-act="tab" data-v="toc" aria-pressed="${active === 'toc'}">Contents</button><button data-act="tab" data-v="bookmarks" aria-pressed="${active === 'bookmarks'}">Bookmarks</button></div></div>`;
+  const t = (v, l) => `<button data-act="tab" data-v="${v}" aria-pressed="${active === v}">${l}</button>`;
+  return `<div class="tabs"><div class="seg" style="--c:3">${t('toc', 'Contents')}${t('bookmarks', 'Bookmarks')}${t('notes', 'Highlights')}</div></div>`;
 }
 function rToc(){
   const el = $('#s-toc'); if (!R.book){ el.innerHTML = ''; return; }
@@ -1112,10 +1142,12 @@ function rBookmarks(){
 
 /* ================= SEARCH ================= */
 let sq = '', sResults = [], sTrunc = false, sT = null;
-function getTexts(){
-  if (!R.texts) R.texts = R.book.chapters.map(c => { const t = document.createElement('template'); t.innerHTML = c.html; return t.content.textContent; });
-  return R.texts;
+function chapText(i){
+  if (!R.texts) R.texts = [];
+  if (R.texts[i] == null){ const t = document.createElement('template'); t.innerHTML = R.book.chapters[i].html; R.texts[i] = t.content.textContent; }
+  return R.texts[i];
 }
+function getTexts(){ return R.book.chapters.map((c, i) => chapText(i)); }
 function doSearch(q){
   sq = q; sResults = []; sTrunc = false; const needle = q.trim().toLowerCase();
   if (needle.length < 2 || !R.book) return;
@@ -1158,6 +1190,7 @@ const STEPS = {
   contrast:{l:'Contrast', min:60, max:100, st:10, f:v => v + '%'},
   tone:{l:'Paper tone', min:-5, max:5, st:1, f:v => v === 0 ? 'Neutral' : v > 0 ? 'Warm +' + v : 'Cool ' + v},
   dim:{l:'Dimmer', min:30, max:100, st:5, f:v => v + '%'},
+  pitch:{l:'Voice pitch', min:.7, max:1.5, st:.1, f:v => v.toFixed(1)},
   rate:{l:'Read-aloud speed', min:.5, max:2, st:.25, f:v => v.toFixed(2) + '×'}
 };
 const ctlStep = k => { const d = STEPS[k]; return `<div class="row"><div class="lbl"><span>${d.l}</span></div><div class="step">${stepBtn(k, -1)}<output>${d.f(S[k])}</output>${stepBtn(k, 1)}</div></div>`; };
@@ -1175,6 +1208,8 @@ const SEGS = {
   wake:{l:'Keep screen awake', o:[[true, 'On'], [false, 'Off']]},
   refresh:{l:'Page refresh', o:[['instant', 'Instant'], ['subtle', 'Subtle'], ['flash', 'E-Ink flash']]},
   sort:{l:'Sort library by', o:[['recent', 'Recent'], ['title', 'Title'], ['author', 'Author']]},
+  vstyle:{l:'Voice style', o:[['female', 'Female'], ['any', 'Any'], ['male', 'Male']]},
+  goal:{l:'Daily reading goal (minutes)', o:[[0, 'Off'], [10, '10'], [20, '20'], [30, '30'], [60, '60']], c:5},
   weight:{l:'Text weight', o:[['normal', 'Regular'], ['bold', 'Bold']]},
   eta:{l:'Time left in footer', o:[[true, 'Show'], [false, 'Hide']]},
   auto:{l:'Auto page turn', o:[[0, 'Off'], [15, '15 s'], [30, '30 s'], [60, '60 s']], c:4}
@@ -1185,20 +1220,22 @@ function rSettings(){
   const el = $('#s-settings'); const old = $('.scroll', el); const top = old ? old.scrollTop : 0;
   const f = FONTS[S.font];
   el.innerHTML = `<header class="hdr"><button class="ib" data-act="back" aria-label="Back">${ic('back')}</button><h1>Settings</h1></header><div class="scroll">
-  <div class="sec">[ Reading ]</div>
+  <div class="qnav"><div class="seg" style="--c:4"><button data-act="jump" data-id="sec-read">Read</button><button data-act="jump" data-id="sec-look">Look</button><button data-act="jump" data-id="sec-behave">Use</button><button data-act="jump" data-id="sec-lib">Books</button></div></div>
+  <div class="sec" id="sec-read">[ Reading ]</div>
   <div class="preview" id="prev" style="font-family:${f.f};font-size:${effSize()}px;line-height:${S.line};font-weight:${S.weight === 'bold' ? 700 : 400};text-align:${S.align === 'justify' ? 'justify' : 'start'}">The lamp had burned down to a small steady flame, and the room had gone quiet. She turned the page without looking up.</div>
   ${ctlFont()}${ctlStep('size')}${ctlStep('line')}${ctlStep('margin')}${ctlSeg('para')}${ctlSeg('align')}${ctlSeg('layout')}${ctlSeg('weight')}
-  <div class="sec">[ Appearance ]</div>
+  <div class="row" style="border:0"><button class="btn wide" data-act="reset-read">Reset reading settings</button></div>
+  <div class="sec" id="sec-look">[ Appearance ]</div>
   ${ctlSeg('theme')}${ctlSeg('pixel')}${ctlStep('contrast')}${ctlStep('tone')}${ctlSeg('gray')}${ctlStep('dim')}${ctlSeg('footer')}${ctlSeg('eta')}
-  <div class="sec">[ Behavior ]</div>
-  ${ctlSeg('turn')}${ctlSeg('hand')}${ctlSeg('orient')}${ctlSeg('wake')}${ctlSeg('refresh')}${ctlSeg('auto')}${ctlStep('rate')}
+  <div class="sec" id="sec-behave">[ Behavior ]</div>
+  ${ctlSeg('turn')}${ctlSeg('hand')}${ctlSeg('orient')}${ctlSeg('wake')}${ctlSeg('refresh')}${ctlSeg('auto')}${ctlSeg('goal')}${ctlSeg('vstyle')}${ctlVoice()}${ctlStep('rate')}${ctlStep('pitch')}<div class="row" style="border:0"><button class="btn wide" data-act="voice-test">Preview voice</button></div>
   <p class="note">E-Ink flash blanks the page on chapter changes and every fifth page. It is skipped when your device requests reduced motion.</p>
   <div class="row" style="border:0"><button class="btn wide" data-act="fullscreen">Toggle fullscreen</button></div>
-  <div class="sec">[ Library ]</div>
+  <div class="sec" id="sec-lib">[ Library ]</div>
   ${ctlSeg('sort')}
   <div class="stack" style="margin-top:12px"><button class="btn wide" data-act="guide">Add reading guide</button><button class="btn wide danger" data-act="del-all">Remove all books</button></div>
   <div class="sec">[ About this display ]</div>
-  <div class="card"><p class="note" style="margin-top:0"><b>PixaRead</b> v1.0 · a quiet pixel reader.</p><p class="note">PixaRead cannot turn an AMOLED screen into real e-ink. E-ink reflects light; AMOLED produces it. The app gives you the closest software approximation: paper-toned palettes, no pure black or white, adjustable contrast, grayscale, a software dimmer and no animation.</p><p class="note">A web app cannot change system brightness or switch on Android's grayscale filter. For that, check Accessibility settings for color correction (grayscale) and extra dim. Names vary by phone.</p><p class="note" style="margin-bottom:0">Your books never leave this device. There is no account and no analytics.</p></div>
+  <div class="card"><p class="note" style="margin-top:0"><b>PixaRead</b> v1.1 · a quiet pixel reader.</p><p class="note">PixaRead cannot turn an AMOLED screen into real e-ink. E-ink reflects light; AMOLED produces it. The app gives you the closest software approximation: paper-toned palettes, no pure black or white, adjustable contrast, grayscale, a software dimmer and no animation.</p><p class="note">A web app cannot change system brightness or switch on Android's grayscale filter. For that, check Accessibility settings for color correction (grayscale) and extra dim. Names vary by phone.</p><p class="note" style="margin-bottom:0">Your books never leave this device. There is no account and no analytics.</p></div>
   </div>`;
   const sc = $('.scroll', el); if (sc) sc.scrollTop = top;
 }
@@ -1212,6 +1249,8 @@ function afterSet(k){
     applyReadStyle(); if (k === 'font' && document.fonts) document.fonts.load('16px ' + FONTS[S.font].f.split(',')[0]).then(relayoutSoon, () => {});
     relayout();
   }
+  if (k === 'vstyle'){ S.voice = ''; saveS(); }
+  if (k === 'voice' || k === 'vstyle' || k === 'pitch') speakChunks(SAMPLE);
   if (k === 'eta') updateUI();
   if (k === 'auto') armAuto();
   if (k === 'rate' && tts.on) speakPage();
@@ -1240,34 +1279,246 @@ async function wake(){
 }
 
 /* ================= read aloud, auto turn, reading time ================= */
-const tts = {on: false, id: 0, pos: '', internal: false};
-function pageText(){ const t = getTexts()[R.ch] || ''; const [a, b] = pageRange(); return t.slice(a, Math.min(b, t.length)).replace(/\s+/g, ' ').trim(); }
+const tts = {on: false, sel: false, paused: false, cur: null, id: 0, pos: '', internal: false, keep: null};
+let voices = [];
+function loadVoices(){ try { voices = ('speechSynthesis' in window) ? (speechSynthesis.getVoices() || []) : []; } catch(e){ voices = []; } }
+loadVoices();
+try { if ('speechSynthesis' in window && speechSynthesis.addEventListener) speechSynthesis.addEventListener('voiceschanged', () => { loadVoices(); if (current === 'settings') rSettings(); else if (current === 'reader' && sheetKind === 'dim') renderSheet(); }); } catch(e){}
+const SAMPLE = 'Hello. This is how I sound when I read to you.';
+const NOVELTY = /^(albert|bad news|bahh|bells|boing|bubbles|cellos|deranged|good news|hysterical|jester|organ|trinoids|whisper|wobble|zarvox|superstar)\b/i;
+const FEM = /female|woman|\b(samantha|victoria|karen|moira|tessa|fiona|serena|allison|ava|susan|zira|hazel|aria|jenny|sonia|libby|michelle|emma|joanna|salli|kimberly|kendra|ivy|amy|nicole|olivia|natasha|clara|catherine|heera|neerja|swara|lekha|veena|priya|shruti|nabanita|tanishaa|kalpana|ioana|paulina|monica|helena|laura|lucia|elsa|ines|amelie|marie|anna|katja|vicki|siri|google us english)\b/i;
+const MAL = /(?:^|[^a-z])male(?![a-z])|\b(david|mark|daniel|alex|fred|george|guy|ryan|james|richard|ravi|prabhat|rishi|thomas|oliver|christopher|eric|brian|matthew|bashkar|pradeep|hemant|jorge|diego|jacques|stefan|conrad|andrew|steffan|arthur|aaron|gordon)\b/i;
+function voiceGender(v){ const n = v.name + ' ' + v.voiceURI; if (FEM.test(n)) return 'f'; if (MAL.test(n)) return 'm'; return '?'; }
+function rankVoice(v, lang){
+  const vl = (v.lang || '').toLowerCase().replace('_', '-'); let sc = 0;
+  if (vl === lang) sc += 20; else if (vl.slice(0, 2) === lang.slice(0, 2)) sc += 10;
+  const g = voiceGender(v);
+  if (S.vstyle === 'female') sc += g === 'f' ? 8 : g === '?' ? 2 : -6;
+  else if (S.vstyle === 'male') sc += g === 'm' ? 8 : g === '?' ? 2 : -6;
+  const n = v.name.toLowerCase();
+  if (/natural|neural/.test(n)) sc += 4; if (/online/.test(n)) sc += 1; if (/premium|enhanced|siri/.test(n)) sc += 3;
+  if (/google/.test(n)) sc += 2; if (!v.localService) sc += 1; if (/compact|espeak|festival/.test(n)) sc -= 3;
+  return sc;
+}
+const voiceLang = () => ((R.book && R.book.meta.lang) || navigator.language || 'en').toLowerCase();
+function detectLang(t){
+  if (/[\u0980-\u09FF]/.test(t)) return 'bn'; if (/[\u0900-\u097F]/.test(t)) return 'hi'; if (/[\u0600-\u06FF]/.test(t)) return 'ar';
+  if (/[\u0400-\u04FF]/.test(t)) return 'ru'; if (/[\u3040-\u30FF]/.test(t)) return 'ja'; if (/[\uAC00-\uD7AF]/.test(t)) return 'ko'; if (/[\u4E00-\u9FFF]/.test(t)) return 'zh';
+  return '';
+}
+function pickVoice(lang){
+  if (!voices.length) loadVoices();
+  const chosen = S.voice && voices.find(x => x.voiceURI === S.voice); if (chosen) return chosen;
+  lang = (lang || voiceLang()).toLowerCase();
+  let best = null, bs = -1e9;
+  for (const v of voices){ if (NOVELTY.test(v.name)) continue; const sc = rankVoice(v, lang); if (sc > bs){ bs = sc; best = v; } }
+  return best;
+}
+function ctlVoice(){
+  const head = '<div class="row"><div class="lbl"><span>Voice</span></div>';
+  if (!('speechSynthesis' in window)) return head + '<p class="note" style="margin:0">Read aloud is not supported in this browser.</p></div>';
+  loadVoices();
+  if (!voices.length) return head + '<p class="note" style="margin:0">No voices found yet. On Android, install or enable a text-to-speech engine in system settings.</p></div>';
+  const lang = voiceLang(); const best = pickVoice(lang);
+  const pool = voices.filter(v => !NOVELTY.test(v.name)).map(v => ({v, r: rankVoice(v, lang)})).sort((a, b) => b.r - a.r || a.v.name.localeCompare(b.v.name));
+  const tag = {f: ' · female', m: ' · male', '?': ''};
+  const auto = 'Auto: best ' + (S.vstyle === 'any' ? '' : S.vstyle + ' ') + 'voice' + (best ? ' (' + best.name + ')' : '');
+  return head + `<select class="sinput" data-sel="voice" aria-label="Voice"><option value="">${esc(auto)}</option>${pool.map(({v}) => `<option value="${esc(v.voiceURI)}" ${S.voice === v.voiceURI ? 'selected' : ''}>${v === best ? '★ ' : ''}${esc(v.name)} (${esc(v.lang)})${tag[voiceGender(v)]}</option>`).join('')}</select><p class="note" style="margin:0">Voice quality depends on what is installed. For the most natural sound on Android, install Google Speech Services voice data in system text-to-speech settings. In Microsoft Edge, the Natural voices sound best.</p></div>`;
+}
+function chunkText(t){
+  const out = []; const sents = t.match(/[^.!?\u0964\n]+[.!?\u0964]*\s*/g) || [t]; let cur = '';
+  for (const x of sents){
+    if (cur && (cur + x).length > 220){ out.push(cur.trim()); cur = ''; }
+    cur += x;
+    while (cur.length > 400){ let cut = cur.lastIndexOf(' ', 300); if (cut < 100) cut = 300; out.push(cur.slice(0, cut).trim()); cur = cur.slice(cut); }
+  }
+  if (cur.trim()) out.push(cur.trim());
+  return out;
+}
+function updatePill(){
+  const p = $('#speakpill'); if (!p) return;
+  p.hidden = !(tts.on || tts.sel);
+  const b = $('#pill-pause'); if (b) b.textContent = tts.paused ? 'Play' : 'Pause';
+}
+function runParts(cur){
+  const id = ++tts.id; tts.cur = cur; try { speechSynthesis.cancel(); } catch(e){}
+  const step = () => {
+    if (id !== tts.id) return;
+    if (cur.i >= cur.parts.length){ tts.cur = null; if (cur.done) cur.done(); return; }
+    const u = new SpeechSynthesisUtterance(cur.parts[cur.i++]); u.rate = S.rate; u.pitch = S.pitch;
+    if (cur.v){ u.voice = cur.v; u.lang = cur.v.lang; } else if (cur.lang) u.lang = cur.lang;
+    u.onend = step;
+    u.onerror = ev => { if (id !== tts.id) return; if (ev && (ev.error === 'interrupted' || ev.error === 'canceled')) return; speakStop(); toast('Read aloud is not available right now'); };
+    tts.keep = u;
+    try { speechSynthesis.speak(u); } catch(e){}
+  };
+  setTimeout(step, 40);
+}
+function speakChunks(txt, done){
+  if (!('speechSynthesis' in window)){ toast('Read aloud is not supported on this device'); return 0; }
+  tts.paused = false;
+  const lang = detectLang(txt) || ((R.book && R.book.meta.lang) || navigator.language || 'en');
+  runParts({parts: chunkText(txt), i: 0, v: pickVoice(lang), lang, done});
+  updatePill(); return tts.id;
+}
+function speakPause(){
+  if (!(tts.on || tts.sel) || !tts.cur) return;
+  if (tts.paused){ tts.paused = false; runParts(tts.cur); }
+  else { tts.paused = true; tts.id++; try { speechSynthesis.cancel(); } catch(e){} tts.cur.i = Math.max(0, tts.cur.i - 1); }
+  updatePill();
+}
+function pageText(){ const t = chapText(R.ch) || ''; const [a, b] = pageRange(); return t.slice(a, Math.min(b, t.length)).replace(/\s+/g, ' ').trim(); }
 function speakStart(){
   if (!('speechSynthesis' in window)){ toast('Read aloud is not supported on this device'); return; }
-  tts.on = true; speakPage(); if (sheetKind) renderSheet();
+  tts.on = true; tts.sel = false; updatePill(); speakPage(); if (sheetKind) renderSheet();
 }
 function speakPage(){
   if (!tts.on || !R.book) return;
-  try { speechSynthesis.cancel(); } catch(e){}
-  tts.pos = R.ch + ':' + R.page; const id = ++tts.id; const txt = pageText();
-  if (!txt){ setTimeout(() => { if (tts.on && id === tts.id) ttsAdvance(); }, 50); return; }
-  const u = new SpeechSynthesisUtterance(txt); u.rate = S.rate; if (R.book.meta.lang) u.lang = R.book.meta.lang;
-  u.onend = () => { if (tts.on && id === tts.id) ttsAdvance(); };
-  u.onerror = () => {};
-  speechSynthesis.speak(u);
+  tts.pos = R.ch + ':' + R.page; const txt = pageText();
+  if (!txt){ const id = ++tts.id; setTimeout(() => { if (tts.on && id === tts.id) ttsAdvance(); }, 50); return; }
+  speakChunks(txt, () => { if (tts.on) ttsAdvance(); });
 }
 function ttsAdvance(){
   const last = R.ch === R.book.chapters.length - 1 && R.page >= R.pages - 1;
   if (last){ speakStop(); toast('End of book'); return; }
   tts.internal = true; next(); tts.internal = false; speakPage();
 }
+function speakSelection(text){
+  if (!text) return;
+  tts.on = false; tts.sel = true; tts.paused = false; updatePill();
+  speakChunks(text, () => { tts.sel = false; updatePill(); if (!selbar.hidden && selInfo) renderSelBar(); });
+  if (sheetKind) renderSheet();
+}
 function speakStop(){
-  const was = tts.on; tts.on = false; tts.id++;
+  const was = tts.on || tts.sel; tts.on = false; tts.sel = false; tts.paused = false; tts.cur = null; tts.id++;
   try { if ('speechSynthesis' in window) speechSynthesis.cancel(); } catch(e){}
-  if (was && sheetKind) renderSheet();
+  updatePill(); if (was){ if (sheetKind) renderSheet(); if (!selbar.hidden && selInfo) renderSelBar(); }
 }
 function ttsSync(){ if (tts.on && !tts.internal && tts.pos !== R.ch + ':' + R.page) speakPage(); }
 addEventListener('pagehide', () => speakStop());
+
+/* ================= highlights, underline, mark ================= */
+const STY = {hl: 'Highlight', ul: 'Underline', mk: 'Mark'};
+const selbar = $('#selbar'); let selInfo = null, selT = null, barDown = false, libq = '';
+function wrapAnnots(){
+  const list = R.book.meta.annots.filter(a => a.ch === R.ch); if (!list.length) return;
+  const w = document.createTreeWalker(flow, NodeFilter.SHOW_TEXT); const nodes = []; let o = 0, nd;
+  while ((nd = w.nextNode())){ nodes.push([nd, o]); o += nd.nodeValue.length; }
+  for (const [node, start] of nodes){
+    const len = node.nodeValue.length, end = start + len;
+    const hit = list.filter(a => a.s < end && a.e > start); if (!hit.length) continue;
+    const pts = new Set([0, len]); hit.forEach(a => { pts.add(clamp(a.s - start, 0, len)); pts.add(clamp(a.e - start, 0, len)); });
+    const cuts = [...pts].sort((x, y) => x - y); const frag = document.createDocumentFragment(); const val = node.nodeValue;
+    for (let i = 0; i < cuts.length - 1; i++){
+      const a0 = cuts[i], a1 = cuts[i + 1]; if (a1 <= a0) continue;
+      const txt = val.slice(a0, a1); const cov = hit.filter(a => a.s <= start + a0 && a.e >= start + a1);
+      if (!cov.length){ frag.appendChild(document.createTextNode(txt)); continue; }
+      const sp = document.createElement('span'); sp.className = 'hl ' + [...new Set(cov.map(a => 'h-' + a.st))].join(' ');
+      sp.dataset.a = cov[cov.length - 1].id; sp.textContent = txt; frag.appendChild(sp);
+    }
+    node.parentNode.replaceChild(frag, node);
+  }
+}
+function refreshAnnots(){
+  clearHL(); const keep = R.page;
+  flow.innerHTML = R.book.chapters[R.ch].html; wrapAnnots(); collectNodes(); measure();
+  R.page = Math.min(keep, R.pages - 1); place(); updateUI();
+}
+function selToOffsets(r){
+  let s = -1, e = -1;
+  for (let i = 0; i < R.nodes.length; i++){
+    const nd = R.nodes[i]; let hit = false; try { hit = r.intersectsNode(nd); } catch(x){}
+    if (!hit) continue;
+    const len = nd.nodeValue.length;
+    const a = nd === r.startContainer ? r.startOffset : 0, b = nd === r.endContainer ? r.endOffset : len;
+    if (b <= a) continue;
+    if (s < 0) s = R.starts[i] + a; e = R.starts[i] + b;
+  }
+  if (s < 0 || e <= s) return null;
+  const t = chapText(R.ch);
+  while (s < e && /\s/.test(t[s])) s++; while (e > s && /\s/.test(t[e - 1])) e--;
+  if (e - s < 1) return null;
+  return {ch: R.ch, s, e, text: t.slice(s, e)};
+}
+function renderSelBar(){
+  if (!selInfo) return; const words = selInfo.text.split(/\s+/).length;
+  selbar.innerHTML = `<div class="sb"><button data-act="a-hl"><span class="pv-hl">Highlight</span></button><button data-act="a-ul"><span class="pv-ul">Underline</span></button><button data-act="a-mk"><span class="pv-mk">Mark</span></button><button data-act="sel-x" aria-label="Close">${ic('close', 2)}</button></div><div class="sb"><button data-act="sel-speak">${ic('speaker', 2)}${tts.sel ? 'Stop' : 'Speak'}</button><button data-act="sel-copy">Copy</button><button data-act="sel-note">Note</button>${words <= 3 ? '<button data-act="sel-look">Look up</button>' : '<button data-act="sel-share">Share</button>'}</div>`;
+}
+function checkSel(){
+  if (barDown || current !== 'reader' || !R.book) return;
+  const sel = getSelection();
+  if (!sel || sel.isCollapsed || !sel.rangeCount){ selbar.hidden = true; selInfo = null; return; }
+  const r = sel.getRangeAt(0);
+  if (!flow.contains(r.commonAncestorContainer)){ selbar.hidden = true; selInfo = null; return; }
+  const info = selToOffsets(r); if (!info){ selbar.hidden = true; selInfo = null; return; }
+  selInfo = info; if (ctlOpen) setCtl(false);
+  const rc = r.getBoundingClientRect(), sr = rstage.getBoundingClientRect();
+  selbar.classList.toggle('at-top', rc.top - sr.top > sr.height * 0.5);
+  renderSelBar(); selbar.hidden = false;
+}
+function clearSel(){ try { const s = getSelection(); if (s && s.removeAllRanges) s.removeAllRanges(); } catch(e){} selbar.hidden = true; selInfo = null; }
+selbar.addEventListener('mousedown', e => e.preventDefault());
+selbar.addEventListener('pointerdown', () => { barDown = true; });
+['pointerup', 'pointercancel'].forEach(ev => selbar.addEventListener(ev, () => setTimeout(() => { barDown = false; }, 700)));
+document.addEventListener('selectionchange', () => { if (current !== 'reader') return; clearTimeout(selT); selT = setTimeout(checkSel, 220); });
+function annotate(st, quiet){
+  if (!selInfo) return null; const m = R.book.meta;
+  const ex = m.annots.find(a => a.ch === selInfo.ch && a.s === selInfo.s && a.e === selInfo.e && a.st === st);
+  if (ex && quiet) return ex;
+  if (ex){ m.annots = m.annots.filter(a => a !== ex); saveNow(); clearSel(); refreshAnnots(); toast('Removed'); return null; }
+  const a = {id: 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), ch: selInfo.ch, s: selInfo.s, e: selInfo.e, st, text: selInfo.text, note: '', t: Date.now()};
+  m.annots.push(a); saveNow(); clearSel(); refreshAnnots();
+  if (!quiet) toast({hl: 'Highlighted', ul: 'Underlined', mk: 'Marked'}[st], {label: 'Add note', fn: () => editAnnotNote(a)});
+  return a;
+}
+async function editAnnotNote(a){
+  const r = await dialog({title: 'Note', body: `<span class="pv-${a.st}">${esc(a.text.length > 160 ? a.text.slice(0, 160) + '\u2026' : a.text)}</span>`, input: a.note || '', actions: [{label: 'Save note', key: 'ok', solid: true}, {label: 'Cancel', key: 'no'}]});
+  if (r && r.key === 'ok'){ a.note = r.text.trim(); saveNow(); if (current === 'notes') rNotes(); }
+}
+async function openAnnot(id){
+  const a = R.book.meta.annots.find(x => x.id === id); if (!a) return;
+  const r = await dialog({title: STY[a.st], body: `<span class="pv-${a.st}">${esc(a.text.length > 240 ? a.text.slice(0, 240) + '\u2026' : a.text)}</span>${a.note ? `<div class="bmnote" style="margin-top:10px">${esc(a.note)}</div>` : ''}`, actions: [{label: 'Read aloud', key: 'speak', solid: true}, {label: a.note ? 'Edit note' : 'Add note', key: 'note'}, {label: 'Change style', key: 'style'}, {label: 'Remove', key: 'del', danger: true}, {label: 'Close', key: 'x'}]});
+  if (r === 'speak') speakSelection(a.text);
+  else if (r === 'note') editAnnotNote(a);
+  else if (r === 'style'){ const ks = ['hl', 'ul', 'mk']; a.st = ks[(ks.indexOf(a.st) + 1) % 3]; saveNow(); refreshAnnots(); toast('Style: ' + STY[a.st]); }
+  else if (r === 'del'){ R.book.meta.annots = R.book.meta.annots.filter(x => x !== a); saveNow(); refreshAnnots(); toast('Highlight removed'); }
+}
+function notesText(){
+  const m = R.book.meta; let out = m.title + (m.author ? ' \u2014 ' + m.author : '') + '\n\n';
+  for (const a of m.annots.slice().sort((x, y) => x.ch - y.ch || x.s - y.s)){
+    out += '\u201C' + a.text + '\u201D\n(' + STY[a.st] + ', ' + (R.book.chapters[a.ch] ? R.book.chapters[a.ch].title : '') + ', ' + Math.round((R.chapStart[a.ch] + a.s) / R.total * 100) + '%)\n' + (a.note ? 'Note: ' + a.note + '\n' : '') + '\n';
+  }
+  return out.trim();
+}
+async function copyText(t){
+  try { if (navigator.clipboard && navigator.clipboard.writeText){ await navigator.clipboard.writeText(t); return true; } } catch(e){}
+  try { const ta = document.createElement('textarea'); ta.value = t; ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0'; document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy'); ta.remove(); return ok; } catch(e){ return false; }
+}
+function rNotes(){
+  const el = $('#s-notes'); if (!R.book){ el.innerHTML = ''; return; }
+  const old = $('.scroll', el); const top = old ? old.scrollTop : 0;
+  const list = R.book.meta.annots.slice().sort((a, b) => a.ch - b.ch || a.s - b.s);
+  let h = `<header class="hdr"><button class="ib" data-act="back" aria-label="Back">${ic('back')}</button><h1>Highlights</h1>${list.length ? '<button class="btn" data-act="notes-copy">Copy all</button>' : ''}</header>${tabs('notes')}<div class="scroll">`;
+  if (!list.length) h += '<div class="empty"><p>No highlights yet. While reading, press and hold a word, drag to select, then choose Highlight, Underline or Mark.</p></div>';
+  for (const a of list){
+    const ex = a.text.length > 160 ? a.text.slice(0, 160) + '\u2026' : a.text, ch = R.book.chapters[a.ch];
+    h += `<div class="li"><button class="main" data-act="note-jump" data-id="${esc(a.id)}"><span class="snip"><span class="pv-${a.st}">${esc(ex)}</span></span><span class="mono">${esc(STY[a.st])} · ${esc(ch ? ch.title : '')} · ${Math.round((R.chapStart[a.ch] + a.s) / R.total * 100)}%</span>${a.note ? `<span class="bmnote">${esc(a.note)}</span>` : ''}</button><span class="side"><button class="ib plain" data-act="note-speak" data-id="${esc(a.id)}" aria-label="Read aloud">${ic('speaker', 2)}</button><button class="ib plain" data-act="note-edit" data-id="${esc(a.id)}" aria-label="Edit note">${ic('edit', 2)}</button><button class="ib plain" data-act="note-del" data-id="${esc(a.id)}" aria-label="Remove highlight">${ic('trash', 2)}</button></span></div>`;
+  }
+  el.innerHTML = h + '</div>'; const sc = $('.scroll', el); if (sc) sc.scrollTop = top;
+}
+function libRows(){
+  const q = libq.trim().toLowerCase();
+  const list = sortedBooks().filter(b => !q || b.title.toLowerCase().indexOf(q) >= 0 || (b.author || '').toLowerCase().indexOf(q) >= 0);
+  return list.length ? list.map(b => bookRow(b, 'details')).join('') : '<p class="note">No books match your search.</p>';
+}
+document.addEventListener('input', e => { if (e.target && e.target.id === 'libq'){ libq = e.target.value; const l = $('#liblist'); if (l) l.innerHTML = libRows(); } });
+document.addEventListener('change', e => { const el = e.target && e.target.closest ? e.target.closest('select[data-sel]') : null; if (el) setKey(el.dataset.sel, el.value || ''); });
+let tipsShown = false;
+async function showTips(){
+  if (tipsShown) return; let seen = false; try { seen = localStorage.getItem('inkleaf.tips') === '1'; } catch(e){}
+  tipsShown = true; if (seen) return; try { localStorage.setItem('inkleaf.tips', '1'); } catch(e){}
+  await dialog({title: 'Quick tips', body: '<ul style="margin:0;padding-left:1.2em;line-height:1.6"><li>Tap the <b>left or right edge</b> to turn pages.</li><li>Tap the <b>middle</b> for menus.</li><li><b>Press and hold</b> a word to highlight, underline, mark, or hear it read aloud.</li><li>Tap the <b>top right corner</b> to bookmark a page.</li></ul>', actions: [{label: 'Got it', key: 'ok', solid: true}]});
+}
 let autoT = null;
 function armAuto(){
   clearTimeout(autoT);
@@ -1284,7 +1535,8 @@ let lastAct = Date.now();
 setInterval(() => {
   if (current !== 'reader' || document.hidden) return;
   if (Date.now() - lastAct > 120000 && !tts.on && !S.auto) return;
-  const k = dayStr(new Date()); stats[k] = (stats[k] || 0) + 10;
+  const k = dayStr(new Date()); const before = stats[k] || 0; stats[k] = before + 10;
+  if (S.goal && before < S.goal * 60 && stats[k] >= S.goal * 60) toast('Daily goal reached');
   const keys = Object.keys(stats).sort(); while (keys.length > 120) delete stats[keys.shift()];
   try { localStorage.setItem('inkleaf.stats', JSON.stringify(stats)); } catch(e){}
 }, 10000);
@@ -1292,9 +1544,11 @@ function statsLine(){
   const t = stats[dayStr(new Date())] || 0; let streak = 0; const d = new Date();
   if ((stats[dayStr(d)] || 0) < 60) d.setDate(d.getDate() - 1);
   while ((stats[dayStr(d)] || 0) >= 60 && streak < 400){ streak++; d.setDate(d.getDate() - 1); }
-  if (!t && !streak) return '';
+  if (!t && !streak && !S.goal) return '';
   const m = Math.round(t / 60);
-  return `<div class="lbl" style="margin-bottom:12px">Today ${t && m < 1 ? '<1' : m} min${streak > 1 ? ' · ' + streak + '-day streak' : ''}</div>`;
+  let h = `<div style="margin-bottom:14px"><div class="lbl">Today ${t && m < 1 ? '<1' : m} min${S.goal ? ' / ' + S.goal + ' min goal' : ''}${streak > 1 ? ' · ' + streak + '-day streak' : ''}</div>`;
+  if (S.goal) h += `<div class="barrow" style="margin-top:6px"><span class="bar"><i style="width:${Math.min(100, Math.round(t / 60 / S.goal * 100))}%"></i></span></div>`;
+  return h + '</div>';
 }
 
 /* ================= device compatibility ================= */
@@ -1343,12 +1597,33 @@ const ACT = {
   'd-bm': () => { bmScope = detailId; go('bookmarks'); },
   prev, next,
   tts(){ if (tts.on) speakStop(); else speakStart(); },
+  'tts-stop': () => speakStop(),
+  'tts-pause': () => speakPause(),
+  'voice-test': () => speakChunks(SAMPLE),
+  'a-hl': () => annotate('hl'), 'a-ul': () => annotate('ul'), 'a-mk': () => annotate('mk'),
+  'sel-x': () => clearSel(),
+  'sel-speak': () => { if (!selInfo) return; if (tts.sel) speakStop(); else speakSelection(selInfo.text); renderSelBar(); },
+  'sel-copy': async () => { if (!selInfo) return; const ok = await copyText(selInfo.text); toast(ok ? 'Copied' : 'Could not copy'); },
+  'sel-note': () => { const a = annotate('hl', true); if (a) editAnnotNote(a); },
+  'sel-look': () => { if (!selInfo) return; const w = selInfo.text.split(/\s+/)[0].replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, ''); if (!w) return; const win = window.open('https://en.wiktionary.org/wiki/' + encodeURIComponent(w.toLowerCase()), '_blank'); if (win){ try { win.opener = null; } catch(e){} } else toast('Pop-up blocked. Allow pop-ups to look up words.'); },
+  'sel-share': async () => { if (!selInfo) return; const txt = '\u201C' + selInfo.text + '\u201D \u2014 ' + R.book.meta.title; try { if (navigator.share){ await navigator.share({text: txt}); return; } } catch(e){ if (e && e.name === 'AbortError') return; } const ok = await copyText(txt); toast(ok ? 'Copied to clipboard' : 'Could not share'); },
+  'd-notes': async () => { try { await ensureBook(detailId); } catch(e){ toast(e.message); return; } go('notes'); },
+  'note-jump': d => { const a = R.book.meta.annots.find(x => x.id === d.id); if (a) jumpTo(a.ch, a.s); },
+  'note-speak': d => { const a = R.book.meta.annots.find(x => x.id === d.id); if (a) speakSelection(a.text); },
+  'note-edit': d => { const a = R.book.meta.annots.find(x => x.id === d.id); if (a) editAnnotNote(a); },
+  'note-del': d => { const m = R.book.meta; m.annots = m.annots.filter(x => x.id !== d.id); saveNow(); rNotes(); toast('Highlight removed'); },
+  'notes-copy': async () => { const ok = await copyText(notesText()); toast(ok ? 'All highlights copied' : 'Could not copy'); },
+  jump: d => { const t = document.getElementById(d.id); if (t) t.scrollIntoView({block: 'start'}); },
+  'reset-read': async () => {
+    const r = await dialog({title: 'Reset reading settings?', body: 'Font, size, spacing, margins, alignment, layout and weight go back to the defaults.', actions: [{label: 'Reset', key: 'yes', solid: true}, {label: 'Cancel', key: 'no'}]});
+    if (r === 'yes'){ ['font', 'size', 'line', 'margin', 'para', 'align', 'layout', 'weight'].forEach(k => { S[k] = DEF[k]; }); saveS(); applyReadStyle(); rSettings(); toast('Reading settings reset'); }
+  },
   toc(){ closeSheet(); go('toc'); },
   search(){ closeSheet(); go('search'); },
   sheet: d => openSheet(d.k),
   theme(){ const ks = Object.keys(THEMES); const n = ks[(ks.indexOf(S.theme) + 1) % ks.length]; setKey('theme', n); toast(THEMES[n].n); },
   bookmark: toggleBookmark,
-  tab(d){ if (d.v === 'toc'){ nav.stack[nav.stack.length - 1] = 'toc'; show('toc'); } else { bmScope = R.book.meta.id; nav.stack[nav.stack.length - 1] = 'bookmarks'; show('bookmarks'); } },
+  tab(d){ if (!R.book) return; if (d.v === 'bookmarks') bmScope = R.book.meta.id; nav.stack[nav.stack.length - 1] = d.v; show(d.v); },
   'toc-jump': d => { R.pendingHL = 0; jumpTo(+d.ch, 0); },
   'search-jump': d => { const r = sResults[+d.i]; if (r) jumpTo(r.ch, r.off, r.len); },
   'bm-jump': async d => { try { await ensureBook(d.b); } catch(e){ toast(e.message); return; } const m = R.book.meta.bookmarks.find(x => x.id === d.m); if (m){ R.book.meta.lastOpened = Date.now(); jumpTo(m.ch, m.off); } },
@@ -1385,7 +1660,7 @@ addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer && e.data
   $('.ctl.top [data-act=back]').innerHTML = ic('back');
   const ok = await DB.open();
   try { books = await DB.all('books'); } catch(e){ books = []; }
-  const og = books.find(b => b.id === 'bk_guide' && /^Inkleaf/.test(b.title));
+  const og = books.find(b => b.id === 'bk_guide' && b.gv !== 2);
   if (og){ try { await removeBook('bk_guide'); await addBook(guideBook(), {id: 'bk_guide', format: 'TXT'}); } catch(e){} }
   show('library');
   await splashDone;
@@ -1395,14 +1670,5 @@ addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer && e.data
 })();
 })();
 </script>
-
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
-  });
-}
-</script>
-
 </body>
 </html>
