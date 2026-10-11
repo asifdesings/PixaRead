@@ -1,0 +1,22 @@
+const {launch,open,sleep,rss,idb}=require('./e2e_lib.js');const fs=require('fs');
+(async()=>{
+ fs.rmSync('/tmp/pxprof5',{recursive:true,force:true});
+ const b=await launch('/tmp/pxprof5');const {p,log}=await open(b);
+ const inp=await p.$('#file');await inp.uploadFile('long.txt');await sleep(4000);
+ const bk=await idb(p,'books');console.log('J1 long book imported:',bk.map(x=>x.title+' | '+x.chapterCount+' chapters').join(', '),'| browser memory (MB):',rss());
+ await p.evaluate(()=>{const I=PixaAudio._internals;I.Tts.start=async()=>{};let n=0;
+   I.Tts.synth=async(text)=>{const len=24000*8;const pcm=new Int16Array(len);for(let i=0;i<len;i++)pcm[i]=(Math.sin(i/20)*3000)|0;n++;await new Promise(r=>setTimeout(r,2));return {pcm,samples:len,tokens:1,ms:2,phonemes:''};};
+   window.__fakeCount=()=>n;});
+ let peak=rss(),run=true;const samp=setInterval(()=>{peak=Math.max(peak,rss());},1500);
+ const t0=Date.now();
+ const res=await p.evaluate(async()=>{const I=PixaAudio._internals;const id=PX.getBooks()[0].id;const book=await I.loadBook(id);const abk=await I.createAudiobook(book,book.groups.map((g,i)=>i),I.defaultCfg());const done=await I.runJob(id);
+   return {status:done.status,chapters:done.chapters.length,doneCh:done.chapters.filter(c=>c.status==='done').length,secs:done.chapters.reduce((n,c)=>n+c.secs,0),bytes:done.chapters.reduce((n,c)=>n+c.bytes,0),passages:window.__fakeCount()};});
+ clearInterval(samp);
+ console.log('J2 pipeline run with stand-in audio (NOT real narration):',JSON.stringify(res),'| took',Math.round((Date.now()-t0)/1000),'s');
+ console.log('   audio length',(res.secs/60).toFixed(0),'min,',(res.bytes/1e6).toFixed(0),'MB on disk | browser memory peak during the run (MB):',peak,'| after:',rss());
+ const leftovers=await p.evaluate(async()=>{const r=await navigator.storage.getDirectory();const out=[];const walk=async(d,pre)=>{for await(const [n,h] of d.entries()){if(h.kind==='file')out.push(pre+n);else await walk(h,pre+n+'/');}};await walk(r,'');return {tmp:out.filter(x=>x.startsWith('tmp/')).length,audio:out.filter(x=>x.startsWith('audio/')).length};});
+ console.log('   leftover temporary passage files:',leftovers.tmp,'| chapter files:',leftovers.audio,'| chunk records left:',(await idb(p,'ab_chunks')).length);
+ console.log('J3 whole-book export of that long file (lazy blob, no big copy in memory): ',await p.evaluate(async()=>{const I=PixaAudio._internals;const id=PX.getBooks()[0].id;const abk=await I.getAB(id);const files=[];let d=0;for(let n=0;n<abk.chapters.length;n++){const f=await I.Store.get('audio/'+id+'/'+n+'.wav');files.push(f);d+=f.size-44;}const blob=new Blob([I.wavHeader(d),...files.map(f=>f.slice(44))]);return (blob.size/1e6).toFixed(0)+' MB blob built; header+data consistent: '+(blob.size===44+d);}),'| memory (MB):',rss());
+ console.log('errors:',log.errors.filter(e=>!/ERR_/.test(e)).join('|')||'none');
+ await b.close();process.exit(0);
+})().catch(e=>{console.log('ERR',e.message.slice(0,500));process.exit(1)});

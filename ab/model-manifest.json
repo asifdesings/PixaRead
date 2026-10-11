@@ -1,0 +1,14 @@
+{
+  "id": "kokoro-82m-v1.0-int8",
+  "version": "1.0",
+  "name": "Kokoro 82M v1.0 (int8)",
+  "base": "model/",
+  "sampleRate": 24000,
+  "files": [
+    {"name": "kokoro-v1.0.int8.onnx", "size": 92361271, "sha256": "6e742170d309016e5891a994e1ce1559c702a2ccd0075e67ef7157974f6406cb"},
+    {"name": "voices-v1.0.bin", "size": 28214398, "sha256": "bca610b8308e8d99f32e6fe4197e7ec01679264efed0cac9140fe9c29f1fbf7d"},
+    {"name": "config.json", "size": 2351, "sha256": "5abb01e2403b072bf03d04fde160443e209d7a0dad49a423be15196b9b43c17f"}
+  ],
+  "license": "Apache-2.0",
+  "sources": ["https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.0"]
+}
