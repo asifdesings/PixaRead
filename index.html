@@ -2575,6 +2575,7 @@ function detectLang(t){
   if (/[\u0400-\u04FF]/.test(t)) return 'ru'; if (/[\u3040-\u30FF]/.test(t)) return 'ja'; if (/[\uAC00-\uD7AF]/.test(t)) return 'ko'; if (/[\u4E00-\u9FFF]/.test(t)) return 'zh';
   return '';
 }
+PX.speech = {pick: lang => pickVoice(lang), rate: () => S.rate, pitch: () => S.pitch};
 function pickVoice(lang){
   if (!voices.length) loadVoices();
   const chosen = S.voice && voices.find(x => x.voiceURI === S.voice); if (chosen) return chosen;

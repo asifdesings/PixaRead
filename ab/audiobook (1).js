@@ -503,7 +503,7 @@ const Play = {
 };
 
 /* ======================================================= screens ======================================================= */
-const UI = {genBook: null, genCfg: null, genSel: null, modelBusy: null, preview: null, previewMsg: '', model: null, openNote: ''};
+const UI = {quick: false, genBook: null, genCfg: null, genSel: null, modelBusy: null, preview: null, previewMsg: '', model: null, openNote: ''};
 const defaultCfg = () => ({voice: 'af_heart', speed: 1, paraPause: 0.7, headPause: 1.0, skipFootnotes: false});
 const hdr = (title, extra) => `<header class="hdr"><button class="ib" data-act="back" aria-label="Back">${ic('back')}</button><h1>${esc(title)}</h1>${extra || ''}</header>`;
 const SEP = '<p class="note" style="margin-top:12px">Audiobooks are real audio files made on this device by an AI voice. They are separate from the <b>Read aloud</b> button in the reader, which uses your phone\u2019s built-in voices and makes no files.</p>';
@@ -562,7 +562,7 @@ async function renderAudio(){
     return `<div class="abrow" data-id="${esc(a.id)}"><div class="abtop">${b ? PX.cover(b, 'lg') : `<span class="cover art lg" style="display:grid;place-items:center">${ic('phones', 4)}</span>`}<div class="abinfo"><span class="t">${esc(a.title)}</span><span class="lbl">${esc(st)} \u00B7 ${done}/${total} chapters</span><span class="lbl">${esc(v.name)} \u00B7 ${v.accent === 'UK' ? 'British' : 'American'} English${secs ? ' \u00B7 ' + human(secs) : ''}${pos}</span>${a.lastError && a.status === 'error' ? `<span class="lbl" style="color:var(--fg)">${esc(a.lastError)}</span>` : ''}</div></div>
       <div class="trio" style="margin-top:8px">${done ? `<button class="btn solid" data-ab="listen" data-id="${esc(a.id)}">${ic('play', 2)} Listen</button>` : ''}<button class="btn" data-ab="gen" data-id="${esc(a.id)}">${a.status === 'done' ? 'Settings' : a.status === 'idle' ? 'Generate' : 'Resume'}</button>${done ? `<button class="btn" data-ab="export-all" data-id="${esc(a.id)}">Export book</button>` : ''}<button class="btn danger" data-ab="delete" data-id="${esc(a.id)}">${ic('trash', 2)} Delete</button></div></div>`;
   }).join('');
-  el.innerHTML = hdr('Audiobooks') + `<div class="scroll">${modelCard()}
+  el.innerHTML = hdr('Audiobooks') + `<div class="scroll"><div class="sec">[ Quick listen ]</div><p class="note">Starts instantly. Uses your phone's own voices, the same as Read aloud. Nothing to download, but it is not saved as an audio file, and it usually stops if the screen locks.</p><button class="btn solid wide" data-ab="quick">${ic('play', 2)} Quick listen to a book</button><div class="sec">[ Advanced voice ]</div><p class="note">A realistic AI voice made on this device. It needs a one-time download of about 121 MB and it is slow: expect hours for a whole book. The audio is saved, so it works offline.</p>${modelCard()}
     <div class="sec">[ My audiobooks ]</div>${rows || '<p class="note">No audiobooks yet. Choose a book to make one.</p>'}
     <button class="btn solid wide" style="margin-top:12px" data-ab="new">${ic('plus', 2)} New audiobook</button>
     <div class="sec">[ Storage ]</div><dl class="dl" style="margin-top:0"><dt>Audio on this device</dt><dd>${fmtBytes(used)}</dd><dt>Free space (browser quota)</dt><dd>${si.quota ? fmtBytes(Math.max(0, si.quota - si.usage)) : 'unknown'}</dd><dt>Stored in</dt><dd>${Store.mode() === 'opfs' ? 'private browser files' : 'browser database'}</dd><dt>Protected from clean-up</dt><dd>${si.persisted ? 'yes' : 'not guaranteed'}</dd></dl>
@@ -696,19 +696,62 @@ async function startGeneration(){
   await afterJob(book.meta.id); renderGen(); const fin = await getAB(book.meta.id);
   if (fin && fin.status === 'done') toast('Audiobook ready');
 }
-async function chooseBook(){
+async function chooseBook(cb = openGenerator){
   const books = PX.getBooks(); if (!books.length){ toast('Import a book first.'); return; }
   const rows = books.map((b, i) => `<button class="btn wide" data-k="b${i}" style="margin-bottom:8px;justify-content:flex-start;text-align:left">${esc(b.title)}</button>`).join('');
   const r = await PX.sheetUI(`<h2>Choose a book</h2><div class="dbody" style="max-height:50vh;overflow:auto">${rows}</div><button class="btn wide" data-k="cancel" style="margin-top:8px">Cancel</button>`);
-  const m = r && /^b(\d+)$/.exec(r.key); if (m) openGenerator(books[+m[1]].id);
+  const m = r && /^b(\d+)$/.exec(r.key); if (m) cb(books[+m[1]].id);
+}
+/* ---- quick listen: reads the book with the phone's own voices (no model, no files) ---- */
+const Q = {book: null, n: 0, i: 0, parts: [], on: false, id: 0, rate: 1, sleep: 0, st: null, wl: null,
+  chap(n, i){ this.n = n; this.i = i || 0; this.parts = prepare(this.book, n, {skipFootnotes: true, paraPause: 0.7, headPause: 1}).chunks.map(c => c.t); this.save(); },
+  save(){ try { localStorage.setItem('pxq:' + this.book.meta.id, JSON.stringify({n: this.n, i: this.i})); } catch(e){} },
+  part(){ const el = $('#q-part'); if (el) el.textContent = 'Part ' + Math.min(this.i + 1, this.parts.length || 1) + ' of ' + (this.parts.length || 1); },
+  speak(){
+    const S = PX.speech; if (!S || !('speechSynthesis' in window)){ this.on = false; toast('Reading aloud is not supported on this device.'); renderQuick(); return; }
+    const id = ++this.id; try { speechSynthesis.cancel(); } catch(e){}
+    if (this.i >= this.parts.length){
+      if (this.n + 1 < this.book.groups.length){ this.chap(this.n + 1, 0); renderQuick(); return this.speak(); }
+      this.on = false; renderQuick(); toast('The end of the book'); return;
+    }
+    const lang = String(this.book.meta.lang || 'en'), u = new SpeechSynthesisUtterance(this.parts[this.i]), v = S.pick(lang);
+    if (v) u.voice = v; u.lang = (v && v.lang) || lang; u.rate = this.rate; u.pitch = S.pitch();
+    u.onend = () => { if (id === this.id && this.on){ this.i++; this.save(); this.part(); this.speak(); } };
+    u.onerror = e => { if (id === this.id && e.error !== 'canceled' && e.error !== 'interrupted'){ this.on = false; renderQuick(); } };
+    try { speechSynthesis.speak(u); } catch(e){}
+  },
+  async play(){ this.on = true; try { if (navigator.wakeLock) this.wl = await navigator.wakeLock.request('screen'); } catch(e){} this.speak(); renderQuick(); },
+  pause(){ this.on = false; this.id++; try { speechSynthesis.cancel(); } catch(e){} renderQuick(); },
+  stop(){ this.on = false; this.id++; clearTimeout(this.st); this.sleep = 0; try { speechSynthesis.cancel(); } catch(e){} try { if (this.wl) this.wl.release(); } catch(e){} this.wl = null; },
+  go(d){ const n = this.n + d; if (!this.book || n < 0 || n >= this.book.groups.length) return; this.chap(n, 0); if (this.on) this.speak(); renderQuick(); },
+  setSleep(min){ clearTimeout(this.st); this.sleep = min; if (min) this.st = setTimeout(() => { this.sleep = 0; this.pause(); toast('Sleep timer: stopped'); }, min * 60000); renderQuick(); }
+};
+async function openQuick(bookId){
+  const book = await loadBook(bookId); if (!book){ toast('That book could not be opened.'); return; }
+  Q.stop(); Q.book = book; let p = null; try { p = JSON.parse(localStorage.getItem('pxq:' + bookId)); } catch(e){}
+  const n = p && p.n < book.groups.length ? p.n : 0; Q.chap(n, p && p.n === n ? p.i : 0);
+  Q.rate = PX.speech ? PX.speech.rate() : 1; UI.quick = true; PX.go('aplay');
+}
+function renderQuick(){
+  const el = $('#s-aplay'); if (!el || !Q.book || !UI.quick) return; const g = Q.book.groups[Q.n];
+  const row = 'style="display:flex;gap:8px;flex-wrap:wrap"';
+  el.innerHTML = hdr('Quick listen') + `<div class="scroll"><p class="lbl">${esc(Q.book.meta.title || '')}</p><h2>${Q.n + 1}. ${esc(g.title)}</h2><p class="note" id="q-part"></p>
+    <div class="trio"><button class="btn" data-ab="qprev">Previous</button><button class="btn solid" data-ab="qtoggle">${Q.on ? 'Pause' : 'Play'}</button><button class="btn" data-ab="qnext">Next</button></div>
+    <div class="sec">[ Speed ]</div><div ${row}>${[0.75, 1, 1.25, 1.5, 2].map(r => `<button class="btn ${Q.rate === r ? 'solid' : ''}" data-ab="qspeed" data-v="${r}">${r}\u00D7</button>`).join('')}</div>
+    <div class="sec">[ Sleep timer ]</div><div ${row}>${[[0, 'Off'], [15, '15 min'], [30, '30 min'], [60, '60 min']].map(([m, t]) => `<button class="btn ${Q.sleep === m ? 'solid' : ''}" data-ab="qsleep" data-v="${m}">${t}</button>`).join('')}</div>
+    <p class="note" style="margin-top:12px">Phone voices usually stop when the screen locks or you leave the app. Choose the voice in Settings, the same as Read aloud.</p></div>`;
+  Q.part();
 }
 const CLICK = {
   async 'model-get'(){ await modelGet(rerenderCurrent); },
   'model-cancel'(){ if (dlCtl) dlCtl.abort(); },
   async 'model-remove'(){ const r = await dialog({title: 'Remove voice model?', body: 'The model is about 120 MB. You will need the internet to download it again. Your audiobooks stay.', actions: [{label: 'Keep it', key: 'no'}, {label: 'Remove', key: 'yes', solid: true}]}); if (r === 'yes'){ await Model.remove(); await refreshModel(rerenderCurrent); } },
   new(){ chooseBook(); },
+  quick(){ chooseBook(openQuick); },
+  qtoggle(){ Q.on ? Q.pause() : Q.play(); }, qprev(){ Q.go(-1); }, qnext(){ Q.go(1); },
+  qspeed(d){ Q.rate = +d.v; if (Q.on) Q.speak(); renderQuick(); }, qsleep(d){ Q.setSleep(+d.v); },
   async gen(d){ openGenerator(d.id); },
-  async listen(d){ if (await Play.open(d.id, null, null, true)) PX.go('aplay'); },
+  async listen(d){ UI.quick = false; Q.stop(); if (await Play.open(d.id, null, null, true)) PX.go('aplay'); },
   async 'export-all'(d){ await exportWhole(d.id); },
   async delete(d){
     const abk = await getAB(d.id); const r = await dialog({title: 'Delete this audiobook?', body: esc('The generated audio for \u201C' + (abk ? abk.title : '') + '\u201D will be deleted from this device. The book itself and your reading progress stay.'), actions: [{label: 'Keep it', key: 'no'}, {label: 'Delete audio', key: 'yes', solid: true}]});
@@ -767,8 +810,8 @@ function wire(id){
 /* ======================================================= registration with the reader ======================================================= */
 PX.screens.audio = async () => { await Store.init(); renderAudio(); await refreshModel(rerenderCurrent); recoverInterrupted(); };
 PX.screens.abgen = async () => { await Store.init(); UI.abkLive = UI.genBook ? await getAB(UI.genBook.meta.id) : null; renderGen(); await refreshModel(rerenderCurrent); };
-PX.screens.aplay = () => renderPlay();
-PX.hooks.show = name => { if (name !== 'aplay' && Play.a && !Play.a.paused && Play.url){ Play.a.pause(); } };
+PX.screens.aplay = () => UI.quick ? renderQuick() : renderPlay();
+PX.hooks.show = name => { if (name !== 'aplay') Q.stop(); if (name !== 'aplay' && Play.a && !Play.a.paused && Play.url){ Play.a.pause(); } };
 ['s-audio', 's-abgen', 's-aplay'].forEach(wire);
 PXA.openLibrary = () => PX.go('audio');
 PXA.openGenerator = openGenerator;

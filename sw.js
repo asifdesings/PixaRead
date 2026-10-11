@@ -8,7 +8,7 @@
  * To publish an update, change VERSION. Browsers then fetch the new worker, cache the new files, and PixaRead offers a
  * one-tap "Update" instead of switching versions in the middle of reading.
  */
-const VERSION = 'pixaread-1.3.0';
+const VERSION = 'pixaread-1.4.0';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png',
