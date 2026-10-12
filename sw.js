@@ -5,10 +5,10 @@
  *   file storage and verifies them; the worker lets those requests go straight to the network and never stores them.
  * - Only this site's own files are handled. Requests to other sites are left alone.
  *
- * To publish an update, change VERSION. Browsers then fetch the new worker, cache the new files, and PixaRead offers a
- * one-tap "Update" instead of switching versions in the middle of reading.
+ * To publish an update, change VERSION. Browsers fetch the new worker, it caches the new files and takes over by itself
+ * (skipWaiting). The page then restarts when it is safe: not while audio plays or a book is being generated.
  */
-const VERSION = 'pixaread-1.4.0';
+const VERSION = 'pixaread-1.7.0';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png',
@@ -18,7 +18,7 @@ const SHELL = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL.map(u => new Request(u, {cache: 'reload'})))));
+  e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL.map(u => new Request(u, {cache: 'reload'})))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
