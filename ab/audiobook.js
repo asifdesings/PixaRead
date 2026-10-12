@@ -562,7 +562,7 @@ async function renderAudio(){
     return `<div class="abrow" data-id="${esc(a.id)}"><div class="abtop">${b ? PX.cover(b, 'lg') : `<span class="cover art lg" style="display:grid;place-items:center">${ic('phones', 4)}</span>`}<div class="abinfo"><span class="t">${esc(a.title)}</span><span class="lbl">${esc(st)} \u00B7 ${done}/${total} chapters</span><span class="lbl">${esc(v.name)} \u00B7 ${v.accent === 'UK' ? 'British' : 'American'} English${secs ? ' \u00B7 ' + human(secs) : ''}${pos}</span>${a.lastError && a.status === 'error' ? `<span class="lbl" style="color:var(--fg)">${esc(a.lastError)}</span>` : ''}</div></div>
       <div class="trio" style="margin-top:8px">${done ? `<button class="btn solid" data-ab="listen" data-id="${esc(a.id)}">${ic('play', 2)} Listen</button>` : ''}<button class="btn" data-ab="gen" data-id="${esc(a.id)}">${a.status === 'done' ? 'Settings' : a.status === 'idle' ? 'Generate' : 'Resume'}</button>${done ? `<button class="btn" data-ab="export-all" data-id="${esc(a.id)}">Export book</button>` : ''}<button class="btn danger" data-ab="delete" data-id="${esc(a.id)}">${ic('trash', 2)} Delete</button></div></div>`;
   }).join('');
-  el.innerHTML = hdr('Audiobooks') + `<div class="scroll"><div class="sec">[ Quick listen ]</div><p class="note">Starts instantly. Uses your phone's own voices, the same as Read aloud. Nothing to download, but it is not saved as an audio file, and it usually stops if the screen locks.</p><button class="btn solid wide" data-ab="quick">${ic('play', 2)} Quick listen to a book</button><div class="sec">[ Advanced voice ]</div><p class="note">A realistic AI voice made on this device. It needs a one-time download of about 121 MB and it is slow: expect hours for a whole book. The audio is saved, so it works offline.</p>${modelCard()}
+  el.innerHTML = hdr('Audiobooks') + `<div class="scroll"><div class="sec">[ Quick listen ]</div><p class="note">Starts instantly. Uses your phone's own voices, the same as Read aloud. Nothing to download, but it is not saved as an audio file, and it usually stops if the screen locks.</p><button class="btn solid wide" data-ab="quick">${ic('play', 2)} Quick listen to a book</button><div class="sec">[ Advanced voice ]</div><p class="note">A realistic AI voice made on this device. Slow (expect hours for a whole book), but the audio is saved and works offline.</p>${modelCard()}
     <div class="sec">[ My audiobooks ]</div>${rows || '<p class="note">No audiobooks yet. Choose a book to make one.</p>'}
     <button class="btn solid wide" style="margin-top:12px" data-ab="new">${ic('plus', 2)} New audiobook</button>
     <div class="sec">[ Storage ]</div><dl class="dl" style="margin-top:0"><dt>Audio on this device</dt><dd>${fmtBytes(used)}</dd><dt>Free space (browser quota)</dt><dd>${si.quota ? fmtBytes(Math.max(0, si.quota - si.usage)) : 'unknown'}</dd><dt>Stored in</dt><dd>${Store.mode() === 'opfs' ? 'private browser files' : 'browser database'}</dd><dt>Protected from clean-up</dt><dd>${si.persisted ? 'yes' : 'not guaranteed'}</dd></dl>
@@ -637,33 +637,92 @@ function progressHtml(bookId){
 }
 
 /* ---- player screen ---- */
+/* ---- player: icons, styles, full screen, mini bar ---- */
+const SV = (d, x) => `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">${d}${x || ''}</svg>`;
+const NUM = n => `<text x="12" y="16.5" font-size="7" text-anchor="middle" font-weight="700">${n}</text>`;
+const I = {play: SV('<path d="M8 5v14l11-7z"/>'), pause: SV('<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>'), prev: SV('<path d="M6 6h2v12H6zM9.5 12l8.5 6V6z"/>'), next: SV('<path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z"/>'),
+  b15: SV('<path d="M12 5V1L7 6l5 5V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/>', NUM(15)), f30: SV('<path d="M12 5V1l5 5-5 5V7a6 6 0 1 0 6 6h2a8 8 0 1 1-8-8z"/>', NUM(30)),
+  down: SV('<path d="M7.4 9.6 12 14.2l4.6-4.6 1.4 1.4-6 6-6-6z"/>'), x: SV('<path d="M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12 19 17.6 17.6 19 12 13.4 6.4 19 5 17.6 10.6 12 5 6.4z"/>'),
+  vol: SV('<path d="M3 9v6h4l5 5V4L7 9zM15.5 8.5a5 5 0 0 1 0 7l-1.4-1.4a3 3 0 0 0 0-4.2z"/>')};
+document.head.insertAdjacentHTML('beforeend', `<style id="ab-style">
+.abp{padding-bottom:32px;text-align:center}.abp-art{width:min(70vw,300px);margin:8px auto 18px;border:2px solid var(--fg);box-shadow:6px 6px 0 var(--fg);background:var(--faint)}
+.abp-art .cover{display:block;width:100%;height:auto;aspect-ratio:1}.abp-art svg,#abm-art svg{display:block;width:100%;height:100%}
+.abp-info h2{margin:0 0 4px;font:600 1.25rem/1.25 var(--f-serif)}.abp-info p{margin:2px 0;color:var(--mid)}
+.abp-seek{margin-top:16px;margin-bottom:4px}.abp-seek div{display:flex;justify-content:space-between;font:12px var(--f-mono);color:var(--mid)}
+.abp input[type=range],#abm input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:none;margin:0;--p:0%;cursor:pointer}
+.abp input[type=range]::-webkit-slider-runnable-track{height:6px;background:linear-gradient(to right,var(--fg) var(--p),var(--faint) var(--p))}
+.abp input[type=range]::-moz-range-track{height:6px;background:linear-gradient(to right,var(--fg) var(--p),var(--faint) var(--p))}
+.abp input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;margin-top:-6px;border-radius:50%;background:var(--fg);border:2px solid var(--bg)}
+.abp input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--fg);border:2px solid var(--bg)}
+.abp-ctl{display:flex;align-items:center;justify-content:center;gap:clamp(6px,3vw,18px);margin-top:10px;margin-bottom:10px}
+.abp-ctl button,#abm button{flex:none;background:none;border:0;color:var(--fg);cursor:pointer;display:grid;place-items:center;width:48px;height:48px;border-radius:50%}
+.abp-ctl button:active,#abm button:active{background:var(--faint)}.abp-ctl svg{width:28px;height:28px}
+.abp-ctl .abp-pp{width:68px;height:68px;background:var(--fg);color:var(--bg)}.abp-ctl .abp-pp:active{background:var(--mid)}.abp-ctl .abp-pp svg{width:34px;height:34px}
+.abp-opt{display:flex;align-items:center;gap:10px;margin-top:6px;margin-bottom:14px}.abp-vol{flex:1;display:flex;align-items:center;gap:6px;color:var(--mid)}.abp-vol svg{width:20px;height:20px;flex:none}
+.chip{font:11px var(--f-label);text-transform:uppercase;letter-spacing:.04em;padding:9px 12px;border:var(--bw) solid var(--fg);background:var(--bg);color:var(--fg);border-radius:999px;cursor:pointer;white-space:nowrap}.chip:active{background:var(--faint)}
+.abp .li{text-align:left}
+#abm{position:fixed;left:0;right:0;bottom:0;z-index:48;display:flex;align-items:center;gap:2px;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:var(--bw) solid var(--fg);transition:transform .25s}
+#abm[hidden]{display:none}#abm-seek{position:absolute;left:0;right:0;top:-9px;height:18px;cursor:pointer;touch-action:none}
+#abm-seek::before{content:'';position:absolute;left:0;right:0;top:7px;height:4px;background:var(--faint)}#abm-fill{position:absolute;left:0;top:7px;height:4px;background:var(--fg)}
+#abm .abm-main{flex:1;min-width:0;width:auto;height:auto;display:flex;align-items:center;gap:10px;justify-content:flex-start;text-align:left;border-radius:0;padding:0}
+#abm-art{flex:none;width:44px;height:44px;border:1px solid var(--fg);overflow:hidden}#abm-art .cover{display:block;width:100%;height:100%}
+#abm-tx{min-width:0;display:flex;flex-direction:column}#abm-t{font:600 .92rem/1.2 var(--f-serif);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#abm-s{font:11px var(--f-mono);color:var(--mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#abm button svg{width:24px;height:24px}#abm .abm-pp{background:var(--fg);color:var(--bg)}#abm .abm-pp:active{background:var(--mid)}
+@media(max-width:380px){#abm [data-m=prev]{display:none}}body.abm-on .scroll{padding-bottom:84px}
+.abp>*{box-sizing:border-box;width:100%;max-width:520px;margin-left:auto;margin-right:auto}.abp>.abp-art{width:min(70vw,300px)}
+@media(min-width:760px){#abm{padding-left:max(8px,calc(50% - 450px));padding-right:max(8px,calc(50% - 450px))}}
+@media(prefers-reduced-motion:reduce){#abm{transition:none}}</style>`);
+const nextOf = (arr, v) => arr[(arr.indexOf(v) + 1) % arr.length];
+const setP = (el, f) => { if (el) el.style.setProperty('--p', (Math.max(0, Math.min(1, f || 0)) * 100) + '%'); };
 let renderPlayBusy = false;
 async function renderPlay(){
   const el = $('#s-aplay'); if (!el) return;
   const abk = Play.abk; if (!abk){ el.innerHTML = hdr('Listen') + '<div class="scroll"><p class="note">Nothing is playing. Choose an audiobook from the list.</p></div>'; return; }
   const a = Play.el(), ch = abk.chapters[Play.n], b = PX.getBooks().find(x => x.id === abk.id);
-  const speeds = [0.75, 1, 1.25, 1.5, 2], sleeps = [['off', 'Off'], ['15', '15m'], ['30', '30m'], ['60', '60m'], ['chapter', 'Chapter']];
+  const speeds = [0.75, 1, 1.25, 1.5, 2], sleeps = ['off', '15', '30', '60', 'chapter'], sl = {off: 'Sleep: off', 15: 'Sleep 15 min', 30: 'Sleep 30 min', 60: 'Sleep 60 min', chapter: 'Sleep: end of chapter'};
   const list = abk.chapters.map((c, n) => c.status === 'done' ? `<div class="li"><button class="main" data-ab="play-ch" data-n="${n}"><span class="t">${n === Play.n ? '\u25B6 ' : ''}${n + 1}. ${esc(c.title)}</span><span class="lbl">${clock(c.secs)}</span></button></div>` : '').join('');
-  el.innerHTML = hdr('Listen') + `<div class="scroll"><div class="dhero" style="margin-bottom:8px">${b ? PX.cover(b, 'lg') : ''}<div class="rinfo"><span class="t">${esc(abk.title)}</span><span class="lbl">Chapter ${Play.n + 1} of ${abk.chapters.length}</span><span class="a" id="ab-p-ch">${esc(ch.title)}</span></div></div>
+  el.innerHTML = `<header class="hdr"><button class="ib" data-act="back" aria-label="Minimize player">${I.down}</button><h1>Now playing</h1></header><div class="scroll abp">
+    <div class="abp-art">${b ? PX.cover(b, 'lg') : ''}</div>
+    <div class="abp-info"><h2>${esc(ch.title)}</h2><p>${esc(abk.title)}${abk.author ? ' \u00B7 ' + esc(abk.author) : ''}</p><p class="lbl">Chapter ${Play.n + 1} of ${abk.chapters.length} \u00B7 <span id="ab-p-tot">${clock(ch.secs)}</span> long</p></div>
     ${Play.missing ? `<p class="note"><b>This chapter\u2019s audio file is missing or cannot be played.</b> The browser may have cleared it.</p><button class="btn solid wide" data-ab="regen" data-n="${Play.n}">Regenerate this chapter</button>` : `
-    <div class="barrow" style="margin:12px 0"><span class="lbl" id="ab-p-cur">0:00</span><input type="range" id="ab-seek" min="0" max="1000" value="0" step="1" style="flex:1;height:44px" aria-label="Seek"><span class="lbl" id="ab-p-rem">-0:00</span></div>
-    <div class="trio" style="grid-template-columns:repeat(4,1fr)"><button class="btn" data-ab="prev" aria-label="Previous chapter">${ic('back', 3)}</button><button class="btn" data-ab="back15" aria-label="Back 15 seconds">-15</button><button class="btn" data-ab="fwd30" aria-label="Forward 30 seconds">+30</button><button class="btn" data-ab="next" aria-label="Next chapter">${ic('back', 3, true)}</button></div>
-    <button class="btn solid wide" id="ab-pp" data-ab="toggle" style="margin-top:8px;min-height:56px">${a.paused ? ic('play', 3) + ' Play' : ic('pause', 3) + ' Pause'}</button>
-    <div class="lbl" style="margin:12px 0 4px">Speed</div><div class="seg" style="--c:5">${speeds.map(s => `<button data-ab="pspeed" data-v="${s}" aria-pressed="${s === Play.speed}">${s}x</button>`).join('')}</div>
-    <div class="lbl" style="margin:12px 0 4px">Volume</div><input type="range" id="ab-vol" min="0" max="100" value="${Math.round(Play.vol * 100)}" style="width:100%;height:44px" aria-label="Volume">
-    <div class="lbl" style="margin:12px 0 4px">Sleep timer</div><div class="seg" style="--c:5">${sleeps.map(([v, l]) => `<button data-ab="sleep" data-v="${v}" aria-pressed="${v === Play.sleepLabel}">${l}</button>`).join('')}</div>
-    <button class="btn wide" style="margin-top:12px" data-ab="export-ch" data-n="${Play.n}">Export this chapter</button>`}
+    <div class="abp-seek"><input type="range" id="ab-seek" min="0" max="1000" value="0" step="1" aria-label="Seek"><div><span id="ab-p-cur">0:00</span><span id="ab-p-rem">-0:00</span></div></div>
+    <div class="abp-ctl"><button data-ab="prev" aria-label="Previous chapter">${I.prev}</button><button data-ab="back15" aria-label="Back 15 seconds">${I.b15}</button><button class="abp-pp" id="ab-pp" data-ab="toggle" aria-label="Play or pause"></button><button data-ab="fwd30" aria-label="Forward 30 seconds">${I.f30}</button><button data-ab="next" aria-label="Next chapter">${I.next}</button></div>
+    <div class="abp-opt"><button class="chip" data-ab="pspeed" data-v="${nextOf(speeds, Play.speed)}" aria-label="Playback speed">${Play.speed}x</button><label class="abp-vol" aria-label="Volume">${I.vol}<input type="range" id="ab-vol" min="0" max="100" value="${Math.round(Play.vol * 100)}"></label><button class="chip" data-ab="sleep" data-v="${nextOf(sleeps, Play.sleepLabel)}">${sl[Play.sleepLabel]}</button></div>
+    <button class="btn wide" data-ab="export-ch" data-n="${Play.n}">Export this chapter</button>`}
     <div class="sec">[ Chapters ]</div>${list}</div>`;
-  const sk = $('#ab-seek'); if (sk){ sk.oninput = () => { if (isFinite(a.duration)) a.currentTime = a.duration * sk.value / 1000; }; }
-  const vol = $('#ab-vol'); if (vol) vol.oninput = () => { Play.vol = vol.value / 100; a.volume = Play.vol; };
+  const sk = $('#ab-seek'); if (sk){ sk.oninput = () => { if (isFinite(a.duration)) a.currentTime = a.duration * sk.value / 1000; setP(sk, sk.value / 1000); }; }
+  const vol = $('#ab-vol'); if (vol){ setP(vol, Play.vol); vol.oninput = () => { Play.vol = vol.value / 100; a.volume = Play.vol; setP(vol, Play.vol); }; }
   renderPlayLive();
 }
 function renderPlayLive(){
-  const a = Play.a; if (!a || $('#s-aplay').hidden) return;
-  const cur = $('#ab-p-cur'), rem = $('#ab-p-rem'), sk = $('#ab-seek'), pp = $('#ab-pp');
-  if (cur) cur.textContent = clock(a.currentTime); if (rem && isFinite(a.duration)) rem.textContent = '-' + clock(a.duration - a.currentTime);
-  if (sk && document.activeElement !== sk && isFinite(a.duration) && a.duration > 0) sk.value = Math.round(a.currentTime / a.duration * 1000);
-  if (pp){ const want = a.paused ? 'play' : 'pause'; if (pp.dataset.s !== want){ pp.dataset.s = want; pp.innerHTML = (a.paused ? ic('play', 3) + ' Play' : ic('pause', 3) + ' Pause'); } }
+  const a = Play.a; mini(); if (!a || !$('#s-aplay') || $('#s-aplay').hidden) return;
+  const cur = $('#ab-p-cur'), rem = $('#ab-p-rem'), sk = $('#ab-seek'), pp = $('#ab-pp'), tot = $('#ab-p-tot'), ok = isFinite(a.duration) && a.duration > 0;
+  if (cur) cur.textContent = clock(a.currentTime); if (rem && ok) rem.textContent = '-' + clock(a.duration - a.currentTime); if (tot && ok) tot.textContent = clock(a.duration);
+  if (sk && document.activeElement !== sk && ok){ sk.value = Math.round(a.currentTime / a.duration * 1000); setP(sk, a.currentTime / a.duration); }
+  if (pp){ const want = a.paused ? 'play' : 'pause'; if (pp.dataset.s !== want){ pp.dataset.s = want; pp.innerHTML = I[want]; } }
+}
+let CUR = '', miniKey = '';
+function miniSrc(){
+  if (UI.quick && Q.book){ const g = Q.book.groups[Q.n]; return {b: Q.book.meta, t: g.title, s: Q.book.meta.title, on: Q.on, f: Q.parts.length ? Q.i / Q.parts.length : 0}; }
+  if (Play.abk && Play.url && !Play.missing && Play.a){ const a = Play.a; return {b: PX.getBooks().find(x => x.id === Play.abk.id), t: Play.abk.chapters[Play.n].title, s: Play.abk.title, on: !a.paused, f: a.duration > 0 ? a.currentTime / a.duration : 0}; }
+  return null;
+}
+function mini(){
+  const src = miniSrc(), show = !!src && !['aplay', 'reader'].includes(CUR); let m = $('#abm');
+  if (!m){
+    if (!show) return; m = document.createElement('div'); m.id = 'abm'; m.setAttribute('role', 'region'); m.setAttribute('aria-label', 'Audio player');
+    m.innerHTML = `<div id="abm-seek"><i id="abm-fill"></i></div><button class="abm-main" data-m="open" aria-label="Open player"><span id="abm-art"></span><span id="abm-tx"><span id="abm-t"></span><span id="abm-s"></span></span></button><button data-m="prev" aria-label="Previous">${I.prev}</button><button class="abm-pp" id="abm-pp" data-m="pp" aria-label="Play or pause"></button><button data-m="next" aria-label="Next">${I.next}</button><button data-m="close" aria-label="Close player">${I.x}</button>`;
+    document.body.appendChild(m);
+    m.onclick = e => { const k = e.target.closest('[data-m]'); if (!k) return; const v = k.dataset.m, q = UI.quick;
+      if (v === 'open') PX.go('aplay'); else if (v === 'pp') (q ? (Q.on ? Q.pause() : Q.play()) : Play.toggle());
+      else if (v === 'prev') (q ? Q.go(-1) : Play.step(-1)); else if (v === 'next') (q ? Q.go(1) : Play.step(1));
+      else if (v === 'close'){ if (q){ Q.stop(); UI.quick = false; Q.book = null; } else Play.unload(); mini(); } };
+    const sk = $('#abm-seek'), at = e => { const r = sk.getBoundingClientRect(), a = Play.a; if (!UI.quick && a && isFinite(a.duration)) a.currentTime = a.duration * Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); };
+    sk.onpointerdown = e => { at(e); try { sk.setPointerCapture(e.pointerId); } catch(x){} sk.onpointermove = at; }; sk.onpointerup = () => { sk.onpointermove = null; };
+  }
+  document.body.classList.toggle('abm-on', show); m.hidden = !show; if (!show) return;
+  const key = src.t + '|' + (src.b && src.b.id); if (key !== miniKey){ miniKey = key; $('#abm-art').innerHTML = src.b ? PX.cover(src.b, 'sm') : ''; $('#abm-t').textContent = src.t; $('#abm-s').textContent = src.s; }
+  $('#abm-fill').style.width = (Math.max(0, Math.min(1, src.f)) * 100) + '%'; const pp = $('#abm-pp'), w = src.on ? 'pause' : 'play'; if (pp.dataset.s !== w){ pp.dataset.s = w; pp.innerHTML = I[w]; }
 }
 
 /* ---- live progress while a job runs (no full re-render for every passage) ---- */
@@ -706,7 +765,7 @@ async function chooseBook(cb = openGenerator){
 const Q = {book: null, n: 0, i: 0, parts: [], on: false, id: 0, rate: 1, sleep: 0, st: null, wl: null,
   chap(n, i){ this.n = n; this.i = i || 0; this.parts = prepare(this.book, n, {skipFootnotes: true, paraPause: 0.7, headPause: 1}).chunks.map(c => c.t); this.save(); },
   save(){ try { localStorage.setItem('pxq:' + this.book.meta.id, JSON.stringify({n: this.n, i: this.i})); } catch(e){} },
-  part(){ const el = $('#q-part'); if (el) el.textContent = 'Part ' + Math.min(this.i + 1, this.parts.length || 1) + ' of ' + (this.parts.length || 1); },
+  part(){ const el = $('#q-part'); if (el) el.textContent = 'Part ' + Math.min(this.i + 1, this.parts.length || 1) + ' of ' + (this.parts.length || 1); mini(); },
   speak(){
     const S = PX.speech; if (!S || !('speechSynthesis' in window)){ this.on = false; toast('Reading aloud is not supported on this device.'); renderQuick(); return; }
     const id = ++this.id; try { speechSynthesis.cancel(); } catch(e){}
@@ -728,19 +787,18 @@ const Q = {book: null, n: 0, i: 0, parts: [], on: false, id: 0, rate: 1, sleep: 
 };
 async function openQuick(bookId){
   const book = await loadBook(bookId); if (!book){ toast('That book could not be opened.'); return; }
-  Q.stop(); Q.book = book; let p = null; try { p = JSON.parse(localStorage.getItem('pxq:' + bookId)); } catch(e){}
+  if (Play.a) Play.a.pause(); Q.stop(); Q.book = book; let p = null; try { p = JSON.parse(localStorage.getItem('pxq:' + bookId)); } catch(e){}
   const n = p && p.n < book.groups.length ? p.n : 0; Q.chap(n, p && p.n === n ? p.i : 0);
   Q.rate = PX.speech ? PX.speech.rate() : 1; UI.quick = true; PX.go('aplay');
 }
 function renderQuick(){
-  const el = $('#s-aplay'); if (!el || !Q.book || !UI.quick) return; const g = Q.book.groups[Q.n];
-  const row = 'style="display:flex;gap:8px;flex-wrap:wrap"';
-  el.innerHTML = hdr('Quick listen') + `<div class="scroll"><p class="lbl">${esc(Q.book.meta.title || '')}</p><h2>${Q.n + 1}. ${esc(g.title)}</h2><p class="note" id="q-part"></p>
-    <div class="trio"><button class="btn" data-ab="qprev">Previous</button><button class="btn solid" data-ab="qtoggle">${Q.on ? 'Pause' : 'Play'}</button><button class="btn" data-ab="qnext">Next</button></div>
-    <div class="sec">[ Speed ]</div><div ${row}>${[0.75, 1, 1.25, 1.5, 2].map(r => `<button class="btn ${Q.rate === r ? 'solid' : ''}" data-ab="qspeed" data-v="${r}">${r}\u00D7</button>`).join('')}</div>
-    <div class="sec">[ Sleep timer ]</div><div ${row}>${[[0, 'Off'], [15, '15 min'], [30, '30 min'], [60, '60 min']].map(([m, t]) => `<button class="btn ${Q.sleep === m ? 'solid' : ''}" data-ab="qsleep" data-v="${m}">${t}</button>`).join('')}</div>
-    <p class="note" style="margin-top:12px">Phone voices usually stop when the screen locks or you leave the app. Choose the voice in Settings, the same as Read aloud.</p></div>`;
-  Q.part();
+  const el = $('#s-aplay'); if (!el || !Q.book || !UI.quick) return mini(); const g = Q.book.groups[Q.n], m = Q.book.meta, rates = [0.75, 1, 1.25, 1.5, 2], sl = [0, 15, 30, 60];
+  el.innerHTML = `<header class="hdr"><button class="ib" data-act="back" aria-label="Minimize player">${I.down}</button><h1>Quick listen</h1></header><div class="scroll abp">
+    <div class="abp-art">${PX.cover(m, 'lg')}</div><div class="abp-info"><h2>${esc(g.title)}</h2><p>${esc(m.title || '')}</p><p class="lbl">Chapter ${Q.n + 1} of ${Q.book.groups.length} \u00B7 <span id="q-part"></span></p></div>
+    <div class="abp-ctl"><button data-ab="qprev" aria-label="Previous chapter">${I.prev}</button><button class="abp-pp" data-ab="qtoggle" aria-label="Play or pause">${Q.on ? I.pause : I.play}</button><button data-ab="qnext" aria-label="Next chapter">${I.next}</button></div>
+    <div class="abp-opt"><button class="chip" data-ab="qspeed" data-v="${nextOf(rates, Q.rate)}" aria-label="Speed">${Q.rate}x</button><button class="chip" data-ab="qsleep" data-v="${nextOf(sl, Q.sleep)}">${Q.sleep ? 'Sleep ' + Q.sleep + ' min' : 'Sleep: off'}</button></div>
+    <p class="note">Quick listen uses your phone\u2019s own voice, so it usually stops if the screen locks. Choose the voice in Settings, the same as Read aloud.</p></div>`;
+  Q.part(); mini();
 }
 const CLICK = {
   async 'model-get'(){ await modelGet(rerenderCurrent); },
@@ -811,7 +869,7 @@ function wire(id){
 PX.screens.audio = async () => { await Store.init(); renderAudio(); await refreshModel(rerenderCurrent); recoverInterrupted(); };
 PX.screens.abgen = async () => { await Store.init(); UI.abkLive = UI.genBook ? await getAB(UI.genBook.meta.id) : null; renderGen(); await refreshModel(rerenderCurrent); };
 PX.screens.aplay = () => UI.quick ? renderQuick() : renderPlay();
-PX.hooks.show = name => { if (name !== 'aplay') Q.stop(); if (name !== 'aplay' && Play.a && !Play.a.paused && Play.url){ Play.a.pause(); } };
+PX.hooks.show = name => { CUR = name; if (name === 'reader'){ if (UI.quick) Q.pause(); if (Play.a && !Play.a.paused && Play.url) Play.a.pause(); } mini(); };
 ['s-audio', 's-abgen', 's-aplay'].forEach(wire);
 PXA.openLibrary = () => PX.go('audio');
 PXA.openGenerator = openGenerator;
