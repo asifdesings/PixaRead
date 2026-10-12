@@ -503,7 +503,7 @@ const Play = {
 };
 
 /* ======================================================= screens ======================================================= */
-const UI = {quick: false, genBook: null, genCfg: null, genSel: null, modelBusy: null, preview: null, previewMsg: '', model: null, openNote: ''};
+const UI = {view: (() => { try { return localStorage.getItem('pxv') === 'text' ? 'text' : 'art'; } catch(e){ return 'art'; } })(), tl: null, quick: false, genBook: null, genCfg: null, genSel: null, modelBusy: null, preview: null, previewMsg: '', model: null, openNote: ''};
 const defaultCfg = () => ({voice: 'af_heart', speed: 1, paraPause: 0.7, headPause: 1.0, skipFootnotes: false});
 const hdr = (title, extra) => `<header class="hdr"><button class="ib" data-act="back" aria-label="Back">${ic('back')}</button><h1>${esc(title)}</h1>${extra || ''}</header>`;
 const SEP = '<p class="note" style="margin-top:12px">Audiobooks are real audio files made on this device by an AI voice. They are separate from the <b>Read aloud</b> button in the reader, which uses your phone\u2019s built-in voices and makes no files.</p>';
@@ -637,69 +637,87 @@ function progressHtml(bookId){
 }
 
 /* ---- player screen ---- */
-/* ---- player: icons, styles, full screen, mini bar ---- */
-const SV = (d, x) => `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">${d}${x || ''}</svg>`;
-const NUM = n => `<text x="12" y="16.5" font-size="7" text-anchor="middle" font-weight="700">${n}</text>`;
-const I = {play: SV('<path d="M8 5v14l11-7z"/>'), pause: SV('<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>'), prev: SV('<path d="M6 6h2v12H6zM9.5 12l8.5 6V6z"/>'), next: SV('<path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z"/>'),
-  b15: SV('<path d="M12 5V1L7 6l5 5V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/>', NUM(15)), f30: SV('<path d="M12 5V1l5 5-5 5V7a6 6 0 1 0 6 6h2a8 8 0 1 1-8-8z"/>', NUM(30)),
-  down: SV('<path d="M7.4 9.6 12 14.2l4.6-4.6 1.4 1.4-6 6-6-6z"/>'), x: SV('<path d="M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12 19 17.6 17.6 19 12 13.4 6.4 19 5 17.6 10.6 12 5 6.4z"/>'),
-  vol: SV('<path d="M3 9v6h4l5 5V4L7 9zM15.5 8.5a5 5 0 0 1 0 7l-1.4-1.4a3 3 0 0 0 0-4.2z"/>')};
+/* ---- player: pixel icons, styles, text mode, full screen, mini bar ---- */
+const pxi = (rows, c) => { let d = ''; rows.forEach((r, y) => { for (const m of r.matchAll(/#+/g)) d += `M${m.index} ${y}h${m[0].length}v1h-${m[0].length}z`; }); return `<svg width="${rows[0].length * c}" height="${rows.length * c}" viewBox="0 0 ${rows[0].length} ${rows.length}" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true"><path d="${d}"/></svg>`; };
+const tri = (w, h, right) => Array.from({length: h}, (_, y) => { const d = Math.abs(y - (h - 1) / 2), n = Math.max(1, Math.round(w - d * w / ((h + 1) / 2))); return right ? '#'.repeat(n).padEnd(w, '.') : '#'.repeat(n).padStart(w, '.'); });
+const ICX = {next: tri(6, 9, true).map(r => r + '.##'), prev: tri(6, 9, false).map(r => '##.' + r), down: ['#.......#', '##.....##', '.##...##.', '..##.##..', '...###...', '....#....']};
+const I = {play: c => ic('play', c || 3), pause: c => ic('pause', c || 3), prev: c => pxi(ICX.prev, c || 3), next: c => pxi(ICX.next, c || 3), down: () => pxi(ICX.down, 3), x: () => ic('close', 2), vol: () => ic('speaker', 2)};
 document.head.insertAdjacentHTML('beforeend', `<style id="ab-style">
-.abp{padding-bottom:32px;text-align:center}.abp-art{width:min(70vw,300px);margin:8px auto 18px;border:2px solid var(--fg);box-shadow:6px 6px 0 var(--fg);background:var(--faint)}
+.abp{padding-bottom:32px;text-align:center}.abp>*{box-sizing:border-box;width:100%;max-width:520px;margin-left:auto;margin-right:auto}
+.abp .seg{margin-bottom:14px}.abp>.abp-art{width:min(66vw,290px);margin-top:4px;margin-bottom:18px;border:2px solid var(--fg);box-shadow:6px 6px 0 var(--fg);background:var(--faint)}
 .abp-art .cover{display:block;width:100%;height:auto;aspect-ratio:1}.abp-art svg,#abm-art svg{display:block;width:100%;height:100%}
-.abp-info h2{margin:0 0 4px;font:600 1.25rem/1.25 var(--f-serif)}.abp-info p{margin:2px 0;color:var(--mid)}
-.abp-seek{margin-top:16px;margin-bottom:4px}.abp-seek div{display:flex;justify-content:space-between;font:12px var(--f-mono);color:var(--mid)}
-.abp input[type=range],#abm input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:none;margin:0;--p:0%;cursor:pointer}
-.abp input[type=range]::-webkit-slider-runnable-track{height:6px;background:linear-gradient(to right,var(--fg) var(--p),var(--faint) var(--p))}
-.abp input[type=range]::-moz-range-track{height:6px;background:linear-gradient(to right,var(--fg) var(--p),var(--faint) var(--p))}
-.abp input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;margin-top:-6px;border-radius:50%;background:var(--fg);border:2px solid var(--bg)}
-.abp input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--fg);border:2px solid var(--bg)}
-.abp-ctl{display:flex;align-items:center;justify-content:center;gap:clamp(6px,3vw,18px);margin-top:10px;margin-bottom:10px}
-.abp-ctl button,#abm button{flex:none;background:none;border:0;color:var(--fg);cursor:pointer;display:grid;place-items:center;width:48px;height:48px;border-radius:50%}
-.abp-ctl button:active,#abm button:active{background:var(--faint)}.abp-ctl svg{width:28px;height:28px}
-.abp-ctl .abp-pp{width:68px;height:68px;background:var(--fg);color:var(--bg)}.abp-ctl .abp-pp:active{background:var(--mid)}.abp-ctl .abp-pp svg{width:34px;height:34px}
-.abp-opt{display:flex;align-items:center;gap:10px;margin-top:6px;margin-bottom:14px}.abp-vol{flex:1;display:flex;align-items:center;gap:6px;color:var(--mid)}.abp-vol svg{width:20px;height:20px;flex:none}
-.chip{font:11px var(--f-label);text-transform:uppercase;letter-spacing:.04em;padding:9px 12px;border:var(--bw) solid var(--fg);background:var(--bg);color:var(--fg);border-radius:999px;cursor:pointer;white-space:nowrap}.chip:active{background:var(--faint)}
+.abp-info h2{margin:0 0 4px;font:600 1.2rem/1.25 var(--f-serif)}.abp-info p{margin:2px 0;color:var(--mid)}
+.abp-seek{margin-top:14px;margin-bottom:4px}.abp-seek div{display:flex;justify-content:space-between;font:11px var(--f-label);letter-spacing:.06em;text-transform:uppercase;color:var(--mid)}
+.abp input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:32px;background:none;margin:0;--p:0%;touch-action:manipulation;cursor:pointer}
+.abp input[type=range]::-webkit-slider-runnable-track{height:12px;border:var(--bw) solid var(--fg);background:repeating-linear-gradient(90deg,transparent 0 6px,var(--bg) 6px 8px),linear-gradient(90deg,var(--fg) var(--p),var(--faint) var(--p))}
+.abp input[type=range]::-moz-range-track{height:12px;border:var(--bw) solid var(--fg);background:repeating-linear-gradient(90deg,transparent 0 6px,var(--bg) 6px 8px),linear-gradient(90deg,var(--fg) var(--p),var(--faint) var(--p))}
+.abp input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:26px;margin-top:-8px;border-radius:0;background:var(--fg);border:2px solid var(--bg);box-shadow:0 0 0 1px var(--fg)}
+.abp input[type=range]::-moz-range-thumb{width:10px;height:22px;border-radius:0;background:var(--fg);border:2px solid var(--bg);box-shadow:0 0 0 1px var(--fg)}
+.abp-ctl{display:flex;align-items:center;justify-content:center;gap:clamp(6px,2.5vw,14px);margin-top:12px;margin-bottom:12px}
+.abp-ctl .ib,.abp-ctl .btn,#abm .ib{touch-action:manipulation;flex:none}.abp-ctl .ib{font-size:11px}.abp-ctl .abp-pp{width:84px;min-height:64px;padding:0}
+.abp-opt{display:flex;align-items:center;gap:10px;margin-top:6px;margin-bottom:14px}.abp-vol{flex:1;display:flex;align-items:center;gap:6px;color:var(--fg)}.abp-vol svg{flex:none}
+.btn.sm{min-height:40px;padding:0 12px;font-size:11px;white-space:nowrap;touch-action:manipulation}
+.abp-text{position:relative;height:min(46vh,380px);overflow-y:auto;-webkit-overflow-scrolling:touch;text-align:left;border:var(--bw) solid var(--fg);padding:10px;margin-bottom:14px;background:var(--bg)}
+.tl{margin:0 0 6px;padding:6px 8px;font:1.02rem/1.5 var(--f-serif);color:var(--fg);cursor:pointer}.tl.past{color:var(--mid)}.tl.on{background:var(--fg);color:var(--bg)}
 .abp .li{text-align:left}
-#abm{position:fixed;left:0;right:0;bottom:0;z-index:48;display:flex;align-items:center;gap:2px;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:var(--bw) solid var(--fg);transition:transform .25s}
-#abm[hidden]{display:none}#abm-seek{position:absolute;left:0;right:0;top:-9px;height:18px;cursor:pointer;touch-action:none}
-#abm-seek::before{content:'';position:absolute;left:0;right:0;top:7px;height:4px;background:var(--faint)}#abm-fill{position:absolute;left:0;top:7px;height:4px;background:var(--fg)}
-#abm .abm-main{flex:1;min-width:0;width:auto;height:auto;display:flex;align-items:center;gap:10px;justify-content:flex-start;text-align:left;border-radius:0;padding:0}
-#abm-art{flex:none;width:44px;height:44px;border:1px solid var(--fg);overflow:hidden}#abm-art .cover{display:block;width:100%;height:100%}
-#abm-tx{min-width:0;display:flex;flex-direction:column}#abm-t{font:600 .92rem/1.2 var(--f-serif);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#abm-s{font:11px var(--f-mono);color:var(--mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#abm button svg{width:24px;height:24px}#abm .abm-pp{background:var(--fg);color:var(--bg)}#abm .abm-pp:active{background:var(--mid)}
-@media(max-width:380px){#abm [data-m=prev]{display:none}}body.abm-on .scroll{padding-bottom:84px}
-.abp>*{box-sizing:border-box;width:100%;max-width:520px;margin-left:auto;margin-right:auto}.abp>.abp-art{width:min(70vw,300px)}
-@media(min-width:760px){#abm{padding-left:max(8px,calc(50% - 450px));padding-right:max(8px,calc(50% - 450px))}}
-@media(prefers-reduced-motion:reduce){#abm{transition:none}}</style>`);
+#abm{position:fixed;left:0;right:0;bottom:0;z-index:48;display:flex;align-items:center;gap:6px;padding:12px 10px calc(14px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:2px solid var(--fg)}
+#abm[hidden]{display:none}#abm-seek{position:absolute;left:0;right:0;top:-11px;height:20px;cursor:pointer;touch-action:none}
+#abm-seek::before{content:'';position:absolute;left:0;right:0;top:6px;height:8px;background:var(--faint);border-top:var(--bw) solid var(--fg);border-bottom:var(--bw) solid var(--fg)}
+#abm-fill{position:absolute;left:0;top:7px;height:6px;background:var(--fg)}#abm-seek::after{content:'';position:absolute;left:0;right:0;top:6px;height:8px;background:repeating-linear-gradient(90deg,transparent 0 6px,var(--bg) 6px 8px)}
+#abm .abm-main{flex:1;min-width:0;display:flex;align-items:center;gap:10px;text-align:left;background:none;border:0;color:var(--fg);padding:0;min-height:48px;touch-action:manipulation;clip-path:none;cursor:pointer}
+#abm-art{flex:none;width:46px;height:46px;display:block}#abm-art .cover{display:block;width:100%;height:100%}
+#abm-tx{min-width:0;display:flex;flex-direction:column}#abm-t{font:600 .92rem/1.2 var(--f-serif);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#abm-s{font:10px var(--f-label);letter-spacing:.05em;text-transform:uppercase;color:var(--mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#abm .ib{width:46px;height:46px}#abm .ib.sol{background:var(--fg);color:var(--bg)}#abm .ib.sol:active{background:var(--bg);color:var(--fg)}
+@media(max-width:400px){#abm [data-m=prev]{display:none}}
+body.abm-on .screen{bottom:var(--abm-h,72px)}body.abm-on .toast{bottom:calc(var(--abm-h,72px) + 12px)}</style>`);
 const nextOf = (arr, v) => arr[(arr.indexOf(v) + 1) % arr.length];
 const setP = (el, f) => { if (el) el.style.setProperty('--p', (Math.max(0, Math.min(1, f || 0)) * 100) + '%'); };
+const TXT = {cur: -1, last: 0};
+const textBox = (parts, id) => `<div class="abp-text" id="${id || 'ab-text'}">${parts.length ? parts.map((t, k) => `<p class="tl" data-ab="tline" data-k="${k}">${esc(t)}</p>`).join('') : '<p class="note">There is no text to show for this chapter.</p>'}</div>`;
+const viewSeg = () => `<div class="seg" style="--c:2"><button data-ab="view" data-v="art" aria-pressed="${UI.view !== 'text'}">Cover</button><button data-ab="view" data-v="text" aria-pressed="${UI.view === 'text'}">Text</button></div>`;
+function bindBox(){ const box = $('#ab-text'); if (box) ['pointerdown', 'wheel', 'touchmove'].forEach(ev => box.addEventListener(ev, () => { TXT.last = now(); }, {passive: true})); }
+function textSync(idx, force){
+  const box = $('#ab-text'); if (!box) return; if (!force && idx === TXT.cur) return; TXT.cur = idx; const ps = box.children;
+  for (let k = 0; k < ps.length; k++) ps[k].className = 'tl' + (k === idx ? ' on' : k < idx ? ' past' : '');
+  const el = ps[idx]; if (el && (force || now() - TXT.last > 4000)) box.scrollTo({top: el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2, behavior: force ? 'auto' : 'smooth'});
+}
+async function fillText(){
+  const abk = Play.abk; if (!abk || !$('#ab-textwrap')) return; const key = abk.id + '|' + Play.n;
+  if (!UI.tl || UI.tl.key !== key){
+    const book = await loadBook(abk.id), box = $('#ab-textwrap'); if (!box) return;
+    if (!book || !book.groups[Play.n]){ box.innerHTML = '<p class="note">The book text is not on this device, so text mode cannot show it.</p>'; return; }
+    const ch = prepare(book, Play.n, {skipFootnotes: !!abk.skipFootnotes, paraPause: abk.paraPause, headPause: abk.headPause}).chunks, w = ch.map(c => c.t.length / 15 + (c.gap || 0)), tot = w.reduce((x, y) => x + y, 0) || 1; let acc = 0;
+    UI.tl = {key, parts: ch.map(c => c.t), start: w.map(x => { const st = acc / tot; acc += x; return st; })};
+  }
+  const wrap = $('#ab-textwrap'); if (!wrap || key !== Play.abk.id + '|' + Play.n) return; wrap.outerHTML = textBox(UI.tl.parts); TXT.cur = -1; bindBox(); renderPlayLive();
+}
 let renderPlayBusy = false;
 async function renderPlay(){
   const el = $('#s-aplay'); if (!el) return;
   const abk = Play.abk; if (!abk){ el.innerHTML = hdr('Listen') + '<div class="scroll"><p class="note">Nothing is playing. Choose an audiobook from the list.</p></div>'; return; }
-  const a = Play.el(), ch = abk.chapters[Play.n], b = PX.getBooks().find(x => x.id === abk.id);
-  const speeds = [0.75, 1, 1.25, 1.5, 2], sleeps = ['off', '15', '30', '60', 'chapter'], sl = {off: 'Sleep: off', 15: 'Sleep 15 min', 30: 'Sleep 30 min', 60: 'Sleep 60 min', chapter: 'Sleep: end of chapter'};
+  const a = Play.el(), ch = abk.chapters[Play.n], b = PX.getBooks().find(x => x.id === abk.id), tx = UI.view === 'text';
+  const speeds = [0.75, 1, 1.25, 1.5, 2], sleeps = ['off', '15', '30', '60', 'chapter'], sl = {off: 'Sleep: off', 15: 'Sleep 15m', 30: 'Sleep 30m', 60: 'Sleep 60m', chapter: 'Sleep: chapter'};
   const list = abk.chapters.map((c, n) => c.status === 'done' ? `<div class="li"><button class="main" data-ab="play-ch" data-n="${n}"><span class="t">${n === Play.n ? '\u25B6 ' : ''}${n + 1}. ${esc(c.title)}</span><span class="lbl">${clock(c.secs)}</span></button></div>` : '').join('');
-  el.innerHTML = `<header class="hdr"><button class="ib" data-act="back" aria-label="Minimize player">${I.down}</button><h1>Now playing</h1></header><div class="scroll abp">
-    <div class="abp-art">${b ? PX.cover(b, 'lg') : ''}</div>
+  el.innerHTML = `<header class="hdr"><button class="ib" data-act="back" aria-label="Minimize player">${I.down()}</button><h1>Now playing</h1></header><div class="scroll abp">
+    ${viewSeg()}${tx ? '<div class="abp-text" id="ab-textwrap"><p class="note">Loading text\u2026</p></div>' : `<div class="abp-art">${b ? PX.cover(b, 'lg') : ''}</div>`}
     <div class="abp-info"><h2>${esc(ch.title)}</h2><p>${esc(abk.title)}${abk.author ? ' \u00B7 ' + esc(abk.author) : ''}</p><p class="lbl">Chapter ${Play.n + 1} of ${abk.chapters.length} \u00B7 <span id="ab-p-tot">${clock(ch.secs)}</span> long</p></div>
     ${Play.missing ? `<p class="note"><b>This chapter\u2019s audio file is missing or cannot be played.</b> The browser may have cleared it.</p><button class="btn solid wide" data-ab="regen" data-n="${Play.n}">Regenerate this chapter</button>` : `
     <div class="abp-seek"><input type="range" id="ab-seek" min="0" max="1000" value="0" step="1" aria-label="Seek"><div><span id="ab-p-cur">0:00</span><span id="ab-p-rem">-0:00</span></div></div>
-    <div class="abp-ctl"><button data-ab="prev" aria-label="Previous chapter">${I.prev}</button><button data-ab="back15" aria-label="Back 15 seconds">${I.b15}</button><button class="abp-pp" id="ab-pp" data-ab="toggle" aria-label="Play or pause"></button><button data-ab="fwd30" aria-label="Forward 30 seconds">${I.f30}</button><button data-ab="next" aria-label="Next chapter">${I.next}</button></div>
-    <div class="abp-opt"><button class="chip" data-ab="pspeed" data-v="${nextOf(speeds, Play.speed)}" aria-label="Playback speed">${Play.speed}x</button><label class="abp-vol" aria-label="Volume">${I.vol}<input type="range" id="ab-vol" min="0" max="100" value="${Math.round(Play.vol * 100)}"></label><button class="chip" data-ab="sleep" data-v="${nextOf(sleeps, Play.sleepLabel)}">${sl[Play.sleepLabel]}</button></div>
+    <div class="abp-ctl"><button class="ib" data-ab="prev" aria-label="Previous chapter">${I.prev()}</button><button class="ib" data-ab="back15" aria-label="Back 15 seconds">-15</button><button class="btn solid abp-pp" id="ab-pp" data-ab="toggle" aria-label="Play or pause"></button><button class="ib" data-ab="fwd30" aria-label="Forward 30 seconds">+30</button><button class="ib" data-ab="next" aria-label="Next chapter">${I.next()}</button></div>
+    <div class="abp-opt"><button class="btn sm" data-ab="pspeed" data-v="${nextOf(speeds, Play.speed)}" aria-label="Playback speed">${Play.speed}x</button><label class="abp-vol" aria-label="Volume">${I.vol()}<input type="range" id="ab-vol" min="0" max="100" value="${Math.round(Play.vol * 100)}"></label><button class="btn sm" data-ab="sleep" data-v="${nextOf(sleeps, Play.sleepLabel)}">${sl[Play.sleepLabel]}</button></div>
     <button class="btn wide" data-ab="export-ch" data-n="${Play.n}">Export this chapter</button>`}
     <div class="sec">[ Chapters ]</div>${list}</div>`;
   const sk = $('#ab-seek'); if (sk){ sk.oninput = () => { if (isFinite(a.duration)) a.currentTime = a.duration * sk.value / 1000; setP(sk, sk.value / 1000); }; }
   const vol = $('#ab-vol'); if (vol){ setP(vol, Play.vol); vol.oninput = () => { Play.vol = vol.value / 100; a.volume = Play.vol; setP(vol, Play.vol); }; }
-  renderPlayLive();
+  renderPlayLive(); if (tx) fillText();
 }
 function renderPlayLive(){
   const a = Play.a; mini(); if (!a || !$('#s-aplay') || $('#s-aplay').hidden) return;
   const cur = $('#ab-p-cur'), rem = $('#ab-p-rem'), sk = $('#ab-seek'), pp = $('#ab-pp'), tot = $('#ab-p-tot'), ok = isFinite(a.duration) && a.duration > 0;
   if (cur) cur.textContent = clock(a.currentTime); if (rem && ok) rem.textContent = '-' + clock(a.duration - a.currentTime); if (tot && ok) tot.textContent = clock(a.duration);
   if (sk && document.activeElement !== sk && ok){ sk.value = Math.round(a.currentTime / a.duration * 1000); setP(sk, a.currentTime / a.duration); }
-  if (pp){ const want = a.paused ? 'play' : 'pause'; if (pp.dataset.s !== want){ pp.dataset.s = want; pp.innerHTML = I[want]; } }
+  if (pp){ const want = a.paused ? 'play' : 'pause'; if (pp.dataset.s !== want){ pp.dataset.s = want; pp.innerHTML = I[want](3); } }
+  if (UI.view === 'text' && ok && UI.tl && Play.abk && UI.tl.key === Play.abk.id + '|' + Play.n){ const st = UI.tl.start, f = a.currentTime / a.duration; let k = st.length - 1; while (k > 0 && st[k] > f) k--; textSync(k); }
 }
 let CUR = '', miniKey = '';
 function miniSrc(){
@@ -711,18 +729,20 @@ function mini(){
   const src = miniSrc(), show = !!src && !['aplay', 'reader'].includes(CUR); let m = $('#abm');
   if (!m){
     if (!show) return; m = document.createElement('div'); m.id = 'abm'; m.setAttribute('role', 'region'); m.setAttribute('aria-label', 'Audio player');
-    m.innerHTML = `<div id="abm-seek"><i id="abm-fill"></i></div><button class="abm-main" data-m="open" aria-label="Open player"><span id="abm-art"></span><span id="abm-tx"><span id="abm-t"></span><span id="abm-s"></span></span></button><button data-m="prev" aria-label="Previous">${I.prev}</button><button class="abm-pp" id="abm-pp" data-m="pp" aria-label="Play or pause"></button><button data-m="next" aria-label="Next">${I.next}</button><button data-m="close" aria-label="Close player">${I.x}</button>`;
+    m.innerHTML = `<div id="abm-seek"><i id="abm-fill"></i></div><button class="abm-main" data-m="open" aria-label="Open player"><span id="abm-art"></span><span id="abm-tx"><span id="abm-t"></span><span id="abm-s"></span></span></button><button class="ib" data-m="prev" aria-label="Previous">${I.prev(2)}</button><button class="ib sol" id="abm-pp" data-m="pp" aria-label="Play or pause"></button><button class="ib" data-m="next" aria-label="Next">${I.next(2)}</button><button class="ib" data-m="close" aria-label="Close player">${I.x()}</button>`;
     document.body.appendChild(m);
-    m.onclick = e => { const k = e.target.closest('[data-m]'); if (!k) return; const v = k.dataset.m, q = UI.quick;
+    const act = v => { const q = UI.quick;
       if (v === 'open') PX.go('aplay'); else if (v === 'pp') (q ? (Q.on ? Q.pause() : Q.play()) : Play.toggle());
       else if (v === 'prev') (q ? Q.go(-1) : Play.step(-1)); else if (v === 'next') (q ? Q.go(1) : Play.step(1));
       else if (v === 'close'){ if (q){ Q.stop(); UI.quick = false; Q.book = null; } else Play.unload(); mini(); } };
+    m.addEventListener('pointerup', e => { const k = e.target.closest && e.target.closest('[data-m]'); if (!k || e.button > 0) return; m._pu = now(); act(k.dataset.m); });
+    m.addEventListener('click', e => { const k = e.target.closest && e.target.closest('[data-m]'); if (!k || (m._pu && now() - m._pu < 700)) return; act(k.dataset.m); });
     const sk = $('#abm-seek'), at = e => { const r = sk.getBoundingClientRect(), a = Play.a; if (!UI.quick && a && isFinite(a.duration)) a.currentTime = a.duration * Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); };
     sk.onpointerdown = e => { at(e); try { sk.setPointerCapture(e.pointerId); } catch(x){} sk.onpointermove = at; }; sk.onpointerup = () => { sk.onpointermove = null; };
   }
-  document.body.classList.toggle('abm-on', show); m.hidden = !show; if (!show) return;
+  document.body.classList.toggle('abm-on', show); m.hidden = !show; if (!show) return; document.body.style.setProperty('--abm-h', m.offsetHeight + 'px');
   const key = src.t + '|' + (src.b && src.b.id); if (key !== miniKey){ miniKey = key; $('#abm-art').innerHTML = src.b ? PX.cover(src.b, 'sm') : ''; $('#abm-t').textContent = src.t; $('#abm-s').textContent = src.s; }
-  $('#abm-fill').style.width = (Math.max(0, Math.min(1, src.f)) * 100) + '%'; const pp = $('#abm-pp'), w = src.on ? 'pause' : 'play'; if (pp.dataset.s !== w){ pp.dataset.s = w; pp.innerHTML = I[w]; }
+  $('#abm-fill').style.width = (Math.max(0, Math.min(1, src.f)) * 100) + '%'; const pp = $('#abm-pp'), w = src.on ? 'pause' : 'play'; if (pp.dataset.s !== w){ pp.dataset.s = w; pp.innerHTML = I[w](2); }
 }
 
 /* ---- live progress while a job runs (no full re-render for every passage) ---- */
@@ -762,43 +782,54 @@ async function chooseBook(cb = openGenerator){
   const m = r && /^b(\d+)$/.exec(r.key); if (m) cb(books[+m[1]].id);
 }
 /* ---- quick listen: reads the book with the phone's own voices (no model, no files) ---- */
-const Q = {book: null, n: 0, i: 0, parts: [], on: false, id: 0, rate: 1, sleep: 0, st: null, wl: null,
-  chap(n, i){ this.n = n; this.i = i || 0; this.parts = prepare(this.book, n, {skipFootnotes: true, paraPause: 0.7, headPause: 1}).chunks.map(c => c.t); this.save(); },
+const Q = {book: null, n: 0, i: 0, parts: [], on: false, id: 0, rate: 1, vol: 1, sleep: 0, st: null, wl: null,
+  chap(n, i){ TXT.cur = -1; this.n = n; this.i = i || 0; this.parts = prepare(this.book, n, {skipFootnotes: true, paraPause: 0.7, headPause: 1}).chunks.map(c => c.t); this.save(); },
   save(){ try { localStorage.setItem('pxq:' + this.book.meta.id, JSON.stringify({n: this.n, i: this.i})); } catch(e){} },
-  part(){ const el = $('#q-part'); if (el) el.textContent = 'Part ' + Math.min(this.i + 1, this.parts.length || 1) + ' of ' + (this.parts.length || 1); mini(); },
+  part(){
+    const n = this.parts.length || 1, el = $('#q-part'), sk = $('#q-seek'), lf = $('#q-left');
+    if (el) el.textContent = 'Part ' + Math.min(this.i + 1, n) + ' of ' + n; if (sk && document.activeElement !== sk){ sk.value = this.i; setP(sk, n > 1 ? this.i / (n - 1) : 0); }
+    if (lf) lf.textContent = '~' + Math.max(1, Math.round(this.parts.slice(this.i).reduce((x, t) => x + t.length, 0) / 15 / this.rate / 60)) + ' min left';
+    if (UI.view === 'text') textSync(this.i); mini();
+  },
+  sync(){ const b = $('#q-pp'); if (b) b.innerHTML = this.on ? I.pause() : I.play(); mini(); },
   speak(){
-    const S = PX.speech; if (!S || !('speechSynthesis' in window)){ this.on = false; toast('Reading aloud is not supported on this device.'); renderQuick(); return; }
+    const S = PX.speech; if (!S || !('speechSynthesis' in window)){ this.on = false; toast('Reading aloud is not supported on this device.'); this.sync(); return; }
     const id = ++this.id; try { speechSynthesis.cancel(); } catch(e){}
     if (this.i >= this.parts.length){
       if (this.n + 1 < this.book.groups.length){ this.chap(this.n + 1, 0); renderQuick(); return this.speak(); }
-      this.on = false; renderQuick(); toast('The end of the book'); return;
+      this.on = false; this.sync(); toast('The end of the book'); return;
     }
     const lang = String(this.book.meta.lang || 'en'), u = new SpeechSynthesisUtterance(this.parts[this.i]), v = S.pick(lang);
-    if (v) u.voice = v; u.lang = (v && v.lang) || lang; u.rate = this.rate; u.pitch = S.pitch();
+    if (v) u.voice = v; u.lang = (v && v.lang) || lang; u.rate = this.rate; u.pitch = S.pitch(); u.volume = this.vol;
     u.onend = () => { if (id === this.id && this.on){ this.i++; this.save(); this.part(); this.speak(); } };
-    u.onerror = e => { if (id === this.id && e.error !== 'canceled' && e.error !== 'interrupted'){ this.on = false; renderQuick(); } };
+    u.onerror = e => { if (id === this.id && e.error !== 'canceled' && e.error !== 'interrupted'){ this.on = false; this.sync(); } };
     try { speechSynthesis.speak(u); } catch(e){}
   },
-  async play(){ this.on = true; try { if (navigator.wakeLock) this.wl = await navigator.wakeLock.request('screen'); } catch(e){} this.speak(); renderQuick(); },
-  pause(){ this.on = false; this.id++; try { speechSynthesis.cancel(); } catch(e){} renderQuick(); },
+  async play(){ this.on = true; try { if (navigator.wakeLock) this.wl = await navigator.wakeLock.request('screen'); } catch(e){} this.speak(); this.sync(); },
+  pause(){ this.on = false; this.id++; try { speechSynthesis.cancel(); } catch(e){} this.sync(); },
   stop(){ this.on = false; this.id++; clearTimeout(this.st); this.sleep = 0; try { speechSynthesis.cancel(); } catch(e){} try { if (this.wl) this.wl.release(); } catch(e){} this.wl = null; },
   go(d){ const n = this.n + d; if (!this.book || n < 0 || n >= this.book.groups.length) return; this.chap(n, 0); if (this.on) this.speak(); renderQuick(); },
   setSleep(min){ clearTimeout(this.st); this.sleep = min; if (min) this.st = setTimeout(() => { this.sleep = 0; this.pause(); toast('Sleep timer: stopped'); }, min * 60000); renderQuick(); }
 };
 async function openQuick(bookId){
   const book = await loadBook(bookId); if (!book){ toast('That book could not be opened.'); return; }
-  if (Play.a) Play.a.pause(); Q.stop(); Q.book = book; let p = null; try { p = JSON.parse(localStorage.getItem('pxq:' + bookId)); } catch(e){}
+  if (Play.a) Play.a.pause(); Q.stop(); Q.book = book; Q.vol = 1; let p = null; try { p = JSON.parse(localStorage.getItem('pxq:' + bookId)); } catch(e){}
   const n = p && p.n < book.groups.length ? p.n : 0; Q.chap(n, p && p.n === n ? p.i : 0);
   Q.rate = PX.speech ? PX.speech.rate() : 1; UI.quick = true; PX.go('aplay');
 }
 function renderQuick(){
-  const el = $('#s-aplay'); if (!el || !Q.book || !UI.quick) return mini(); const g = Q.book.groups[Q.n], m = Q.book.meta, rates = [0.75, 1, 1.25, 1.5, 2], sl = [0, 15, 30, 60];
-  el.innerHTML = `<header class="hdr"><button class="ib" data-act="back" aria-label="Minimize player">${I.down}</button><h1>Quick listen</h1></header><div class="scroll abp">
-    <div class="abp-art">${PX.cover(m, 'lg')}</div><div class="abp-info"><h2>${esc(g.title)}</h2><p>${esc(m.title || '')}</p><p class="lbl">Chapter ${Q.n + 1} of ${Q.book.groups.length} \u00B7 <span id="q-part"></span></p></div>
-    <div class="abp-ctl"><button data-ab="qprev" aria-label="Previous chapter">${I.prev}</button><button class="abp-pp" data-ab="qtoggle" aria-label="Play or pause">${Q.on ? I.pause : I.play}</button><button data-ab="qnext" aria-label="Next chapter">${I.next}</button></div>
-    <div class="abp-opt"><button class="chip" data-ab="qspeed" data-v="${nextOf(rates, Q.rate)}" aria-label="Speed">${Q.rate}x</button><button class="chip" data-ab="qsleep" data-v="${nextOf(sl, Q.sleep)}">${Q.sleep ? 'Sleep ' + Q.sleep + ' min' : 'Sleep: off'}</button></div>
+  const el = $('#s-aplay'); if (!el || !Q.book || !UI.quick) return mini(); const g = Q.book.groups[Q.n], m = Q.book.meta, rates = [0.75, 1, 1.25, 1.5, 2], sl = [0, 15, 30, 60], tx = UI.view === 'text', n = Q.parts.length;
+  el.innerHTML = `<header class="hdr"><button class="ib" data-act="back" aria-label="Minimize player">${I.down()}</button><h1>Quick listen</h1></header><div class="scroll abp">
+    ${viewSeg()}${tx ? textBox(Q.parts) : `<div class="abp-art">${PX.cover(m, 'lg')}</div>`}
+    <div class="abp-info"><h2>${esc(g.title)}</h2><p>${esc(m.title || '')}</p><p class="lbl">Chapter ${Q.n + 1} of ${Q.book.groups.length}</p></div>
+    <div class="abp-seek"><input type="range" id="q-seek" min="0" max="${Math.max(0, n - 1)}" value="${Q.i}" step="1" aria-label="Move to another part"><div><span id="q-part"></span><span id="q-left"></span></div></div>
+    <div class="abp-ctl"><button class="ib" data-ab="qprev" aria-label="Previous chapter">${I.prev()}</button><button class="btn solid abp-pp" id="q-pp" data-ab="qtoggle" aria-label="Play or pause">${Q.on ? I.pause() : I.play()}</button><button class="ib" data-ab="qnext" aria-label="Next chapter">${I.next()}</button></div>
+    <div class="abp-opt"><button class="btn sm" data-ab="qspeed" data-v="${nextOf(rates, Q.rate)}" aria-label="Speed">${Q.rate}x</button><label class="abp-vol" aria-label="Volume">${I.vol()}<input type="range" id="q-vol" min="0" max="100" value="${Math.round(Q.vol * 100)}"></label><button class="btn sm" data-ab="qsleep" data-v="${nextOf(sl, Q.sleep)}">${Q.sleep ? 'Sleep ' + Q.sleep + 'm' : 'Sleep: off'}</button></div>
     <p class="note">Quick listen uses your phone\u2019s own voice, so it usually stops if the screen locks. Choose the voice in Settings, the same as Read aloud.</p></div>`;
-  Q.part(); mini();
+  const sk = $('#q-seek'); if (sk){ sk.oninput = () => { setP(sk, n > 1 ? sk.value / (n - 1) : 0); const p = $('#q-part'); if (p) p.textContent = 'Part ' + (+sk.value + 1) + ' of ' + n; };
+    sk.onchange = () => { Q.i = +sk.value; Q.save(); if (Q.on) Q.speak(); Q.part(); }; }
+  const vol = $('#q-vol'); if (vol){ setP(vol, Q.vol); vol.oninput = () => { Q.vol = vol.value / 100; setP(vol, Q.vol); }; }
+  TXT.cur = -1; bindBox(); Q.part(); if (tx) textSync(Q.i, true);
 }
 const CLICK = {
   async 'model-get'(){ await modelGet(rerenderCurrent); },
@@ -806,6 +837,8 @@ const CLICK = {
   async 'model-remove'(){ const r = await dialog({title: 'Remove voice model?', body: 'The model is about 120 MB. You will need the internet to download it again. Your audiobooks stay.', actions: [{label: 'Keep it', key: 'no'}, {label: 'Remove', key: 'yes', solid: true}]}); if (r === 'yes'){ await Model.remove(); await refreshModel(rerenderCurrent); } },
   new(){ chooseBook(); },
   quick(){ chooseBook(openQuick); },
+  view(d){ UI.view = d.v === 'text' ? 'text' : 'art'; try { localStorage.setItem('pxv', UI.view); } catch(e){} TXT.cur = -1; TXT.last = 0; UI.quick ? renderQuick() : renderPlay(); },
+  tline(d){ const k = +d.k; TXT.last = 0; if (UI.quick){ Q.i = k; Q.save(); if (Q.on) Q.speak(); Q.part(); } else if (UI.tl && Play.a && isFinite(Play.a.duration)){ Play.a.currentTime = Play.a.duration * UI.tl.start[k]; renderPlayLive(); } },
   qtoggle(){ Q.on ? Q.pause() : Q.play(); }, qprev(){ Q.go(-1); }, qnext(){ Q.go(1); },
   qspeed(d){ Q.rate = +d.v; if (Q.on) Q.speak(); renderQuick(); }, qsleep(d){ Q.setSleep(+d.v); },
   async gen(d){ openGenerator(d.id); },
